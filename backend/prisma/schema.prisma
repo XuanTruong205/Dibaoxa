@@ -1,0 +1,309 @@
+// Prisma Schema for Dibaoxa Hotel Booking Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password_hash String
+  full_name     String
+  phone         String?
+  assigned_hotel String?
+  reward_points Int      @default(0)
+  vip_tier      String   @default("silver") // silver, gold, platinum
+  role          String   @default("customer") // customer, receptionist, admin
+  created_at    DateTime @default(now())
+
+  bookings Booking[]
+  reviews  Review[]
+  travel_orders TravelOrder[]
+
+  @@index([role])
+  @@index([assigned_hotel])
+  @@map("users")
+}
+
+model Hotel {
+  id                String   @id @default(uuid())
+  name              String
+  city              String
+  address           String
+  star_rating       Int      @default(5)
+  description       String
+  cover_image       String
+  operator_company  String?
+  amenities         String   @default("[]") // JSON stringified array of amenities
+  gallery_images    String   @default("[]") // JSON stringified array of image URLs
+  highlights        String   @default("[]") // JSON stringified array of highlights
+  highlight_bullets String   @default("[]") // JSON stringified array of detail bullets
+  policies          String   @default("[]") // JSON stringified array of policy items
+  faqs              String   @default("[]") // JSON stringified array of { question, answer }
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  rooms    Room[]
+  services Service[]
+  bookings Booking[]
+  reviews  Review[]
+
+  @@index([city, star_rating])
+  @@map("hotels")
+}
+
+model Room {
+  id              String  @id @default(uuid())
+  hotel_id        String
+  name            String
+  room_type       String  // Single, Double, Suite, Deluxe
+  price_per_night Int
+  max_occupancy   Int     @default(2)
+  bed_type        String
+  area_sqm        Int
+  view_type       String  @default("City view")
+  images          String  @default("[]") // JSON stringified array of image URLs
+  room_services   String  @default("[]") // JSON stringified array of in-room amenities
+  total_rooms     Int     @default(10)
+  is_available    Boolean @default(true)
+
+  hotel    Hotel     @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([hotel_id, is_available])
+  @@map("rooms")
+}
+
+model Booking {
+  id                 String    @id @default(uuid())
+  hotel_id           String
+  room_id            String
+  user_id            String
+  guest_name         String?
+  guest_phone        String?
+  hold_id            String?   @unique
+  check_in_date      String    // YYYY-MM-DD
+  check_out_date     String    // YYYY-MM-DD
+  total_guests       Int       @default(1)
+  room_quantity      Int       @default(1)
+  total_price        Int
+  earned_points      Int       @default(0)
+  status             String    @default("pending_payment") // pending_payment, confirmed, checked_in, checked_out, cancelled
+  booking_code       String    @unique
+  qr_code            String    @unique
+  payment_expires_at DateTime?
+  checked_in_at      DateTime?
+  checked_in_by      String?
+  checked_out_at     DateTime?
+  cancelled_at       DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  hotel            Hotel            @relation(fields: [hotel_id], references: [id])
+  room             Room             @relation(fields: [room_id], references: [id])
+  user             User             @relation(fields: [user_id], references: [id])
+  booking_services BookingService[]
+  payments         Payment[]
+
+  @@index([room_id, status, check_in_date, check_out_date])
+  @@index([user_id, created_at])
+  @@index([hotel_id, status])
+  @@index([status])
+  @@map("bookings")
+}
+
+model Service {
+  id          String @id @default(uuid())
+  hotel_id    String
+  name        String
+  price       Int
+  description String
+
+  hotel            Hotel            @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  booking_services BookingService[]
+
+  @@index([hotel_id])
+  @@map("services")
+}
+
+model BookingService {
+  id         String @id @default(uuid())
+  booking_id String
+  service_id String
+  quantity   Int    @default(1)
+  price      Int
+
+  booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [service_id], references: [id])
+
+  @@index([booking_id])
+  @@index([service_id])
+  @@map("booking_services")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  hotel_id   String
+  user_id    String
+  rating     Int      @default(5)
+  comment    String
+  media_urls String   @default("[]") // JSON stringified array of URLs
+  created_at DateTime @default(now())
+
+  hotel Hotel @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id])
+
+  @@index([hotel_id, created_at])
+  @@index([user_id])
+  @@map("reviews")
+}
+
+model Cruise {
+  id              String   @id
+  name            String
+  operator        String
+  destination     String
+  departure_port  String
+  duration_days   Int
+  price           Int
+  rating          Float    @default(9)
+  review_count    Int      @default(0)
+  ship_class      Int      @default(5)
+  image           String
+  gallery_images  String   @default("[]")
+  features        String   @default("[]")
+  cabins          String   @default("[]")
+  itinerary       String   @default("[]")
+  description     String
+  policies        String   @default("[]")
+  faqs            String   @default("[]")
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  departures CruiseDeparture[]
+
+  @@index([destination, status])
+  @@map("cruises")
+}
+
+model CruiseDeparture {
+  id             String   @id @default(uuid())
+  cruise_id      String
+  departure_date String
+  departure_time String   @default("11:30")
+  status         String   @default("open") // open, closed, cancelled
+  inventory      String   @default("[]") // [{ cabin_name, total_units, price_override }]
+  notes          String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  cruise Cruise @relation(fields: [cruise_id], references: [id], onDelete: Cascade)
+
+  @@unique([cruise_id, departure_date])
+  @@index([departure_date, status])
+  @@map("cruise_departures")
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  booking_id      String
+  amount          Int
+  payment_method  String   // VNPAY, VietQR, Momo, CreditCard
+  status          String   @default("pending")
+  transaction_ref String   @unique
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  refunded_at     DateTime?
+
+  booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+
+  @@index([booking_id, status])
+  @@index([status, created_at])
+  @@map("payments")
+}
+
+model TravelOrder {
+  id                 String   @id @default(uuid())
+  order_code         String   @unique
+  client_request_id  String   @unique
+  user_id            String
+  product_type       String
+  product_ref        String
+  title              String
+  summary            String
+  product_snapshot   String
+  traveler_name      String
+  traveler_email     String
+  traveler_phone     String
+  traveler_note      String?
+  quantity           Int
+  unit_price         Int
+  total_price        Int
+  status             String   @default("pending_payment")
+  payment_expires_at DateTime
+  earned_points      Int      @default(0)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  user     User                 @relation(fields: [user_id], references: [id])
+  payments TravelOrderPayment[]
+
+  @@index([user_id, created_at])
+  @@index([product_type, status])
+  @@index([status, payment_expires_at])
+  @@map("travel_orders")
+}
+
+model TravelOrderPayment {
+  id              String   @id @default(uuid())
+  order_id        String
+  amount          Int
+  payment_method  String
+  status          String   @default("pending")
+  transaction_ref String   @unique
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  refunded_at     DateTime?
+
+  order TravelOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id, status])
+  @@index([status, created_at])
+  @@map("travel_order_payments")
+}
+
+model TravelPackage {
+  id          String   @id @default(uuid())
+  title       String
+  destination String
+  duration    String
+  price       Int
+  included    String   @default("[]") // JSON stringified array of included benefits
+  status      String   @default("active")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([destination, status])
+  @@map("travel_packages")
+}
+
+model StaffDirectory {
+  id               String   @id @default(uuid())
+  full_name        String
+  email            String?  @unique
+  job_title        String
+  phone            String
+  assigned_hotel   String
+  status           String   @default("active")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([assigned_hotel, status])
+  @@map("staff_directory")
+}

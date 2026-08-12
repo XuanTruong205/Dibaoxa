@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.antigravity-build*/
+.codex-build*/
+*.log
+.vite/
+
+.env
+.env.*
+!.env.example
+
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Local catalog snapshots and generated test artifacts
+backend/prisma/backups/
+
+# Legacy duplicate media kept locally for compatibility while the app uses Dibaoxa assets
+frontend/public/images/myvivu-*
+frontend/public/videos/myvivu-*

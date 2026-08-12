@@ -1,0 +1,1804 @@
+/* Reference-led booking pages. Dibaoxa brand assets and copy remain original. */
+.reference-flight-page,
+.reference-cruise-page,
+.reference-cruise-detail {
+  color: var(--text);
+}
+
+.reference-flight-hero {
+  width: min(1392px, calc(100vw - 64px));
+  height: min(55vw, 784px);
+  min-height: 620px;
+  margin: 0 auto 350px;
+  position: relative;
+  border-radius: 24px;
+}
+
+.reference-flight-hero > img,
+.reference-flight-hero__shade {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.reference-flight-hero > img {
+  object-fit: cover;
+}
+
+.reference-flight-hero__shade {
+  background: linear-gradient(90deg, rgba(16, 24, 40, 0.72) 0%, rgba(16, 24, 40, 0.2) 58%, rgba(16, 24, 40, 0.05) 100%);
+}
+
+.reference-flight-hero__copy {
+  width: min(560px, 52%);
+  position: absolute;
+  z-index: 1;
+  top: clamp(72px, 9vw, 132px);
+  left: clamp(36px, 7vw, 96px);
+  color: #fff;
+}
+
+.reference-flight-hero__copy > span,
+.reference-results-heading > div > span,
+.reference-flight-review__image + div > span,
+.reference-airline-network > div:first-child > span,
+.reference-cruise-search__heading > span,
+.reference-cruise-results__header > div > span {
+  color: var(--accent-bright);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reference-flight-hero__copy h1 {
+  max-width: 540px;
+  margin: 14px 0;
+  color: #fff;
+  font-size: clamp(2.7rem, 5vw, 4.8rem);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+
+.reference-flight-hero__copy p {
+  max-width: 480px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 1rem;
+}
+
+.reference-flight-search {
+  width: min(1100px, calc(100% - 64px));
+  position: absolute;
+  z-index: 3;
+  right: 50%;
+  bottom: -300px;
+  transform: translateX(50%);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-elevated);
+  box-shadow: 0 32px 70px -34px rgba(16, 24, 40, 0.46);
+}
+
+.reference-flight-search__tabs {
+  margin-bottom: 22px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reference-flight-search__tabs label {
+  min-height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reference-flight-search__tabs label.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.reference-flight-search__tabs input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reference-flight-search__route {
+  display: grid;
+  grid-template-columns: 1fr 42px 1fr 0.85fr 0.85fr;
+  align-items: end;
+  gap: 10px;
+}
+
+.reference-flight-search__route > label,
+.reference-flight-search__options > label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.reference-flight-search__route label > span,
+.reference-flight-search__options label > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.reference-flight-search__route label > span svg {
+  width: 15px;
+  color: var(--accent);
+}
+
+.reference-flight-search select,
+.reference-flight-search input,
+.reference-cruise-search select,
+.reference-cruise-search input,
+.reference-booking-card input,
+.reference-booking-card select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  outline: 0;
+  background: var(--surface-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.reference-flight-search select:focus,
+.reference-flight-search input:focus,
+.reference-cruise-search select:focus,
+.reference-cruise-search input:focus,
+.reference-booking-card input:focus,
+.reference-booking-card select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.reference-flight-search__route label.is-disabled {
+  opacity: 0.45;
+}
+
+.reference-airport-swap {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 3px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.reference-airport-swap svg {
+  width: 18px;
+}
+
+.reference-flight-search__options {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.reference-flight-search__options .btn-primary {
+  min-width: 170px;
+  min-height: 48px;
+}
+
+.reference-flight-search .form-error {
+  margin: 12px 0 0;
+}
+
+.reference-results-section,
+.reference-flight-review,
+.reference-airline-network,
+.reference-cruise-results {
+  width: min(1200px, calc(100% - 64px));
+  margin-inline: auto;
+}
+
+.reference-results-section {
+  padding: 0 0 100px;
+  scroll-margin-top: 104px;
+}
+
+.reference-results-heading,
+.reference-cruise-results__header {
+  margin-bottom: 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.reference-results-heading h2,
+.reference-cruise-results__header h2 {
+  margin: 7px 0 4px;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.reference-results-heading p,
+.reference-cruise-results__header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.reference-results-heading > strong {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
+.reference-results-section .travel-results-layout,
+.reference-cruise-results .travel-results-layout {
+  width: 100%;
+  margin: 0;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.reference-results-section .travel-filter-panel,
+.reference-cruise-results .travel-filter-panel {
+  width: 280px;
+  min-width: 280px;
+  border-radius: 24px;
+}
+
+.reference-flight-review {
+  padding: 90px 0;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.reference-flight-review__image {
+  min-height: 480px;
+  border-radius: 32px;
+  overflow: hidden;
+}
+
+.reference-flight-review__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reference-flight-review__image + div {
+  padding: clamp(32px, 5vw, 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 32px;
+  background: var(--surface-muted);
+}
+
+.reference-flight-review h2 {
+  margin: 12px 0 22px;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.reference-flight-review blockquote {
+  margin: 0 0 22px;
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.reference-flight-review small {
+  color: var(--muted);
+}
+
+.reference-flight-review__image + div > div {
+  margin-top: 24px;
+  display: flex;
+  gap: 8px;
+}
+
+.reference-flight-review__image + div > div button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reference-flight-review__image + div > div button.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.reference-flight-review__image + div > div svg {
+  width: 15px;
+}
+
+.reference-airline-network {
+  padding: 80px 0 100px;
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  align-items: center;
+  gap: 64px;
+}
+
+.reference-airline-network h2 {
+  margin: 10px 0 0;
+  font-size: 2rem;
+}
+
+.reference-airline-network > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.reference-airline-network article {
+  min-height: 94px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-elevated);
+}
+
+.reference-airline-network article svg {
+  width: 40px;
+  height: 40px;
+  grid-row: 1 / 3;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.reference-airline-network article small {
+  color: var(--muted);
+}
+
+/* Cruise search results */
+.reference-cruise-search {
+  width: min(1200px, calc(100% - 64px));
+  margin: 32px auto 0;
+  padding: 64px 32px 40px;
+  border-radius: 32px;
+  background: var(--surface-muted);
+}
+
+.reference-cruise-search__heading {
+  max-width: 700px;
+  margin: 0 auto 30px;
+  text-align: center;
+}
+
+.reference-cruise-search__heading h1 {
+  margin: 9px 0 7px;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+}
+
+.reference-cruise-search__heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.reference-cruise-search form {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow);
+}
+
+.reference-cruise-search__primary {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr auto;
+  gap: 10px;
+}
+
+.reference-cruise-search__primary > label {
+  min-width: 0;
+  min-height: 60px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+}
+
+.reference-cruise-search__primary > label > svg {
+  width: 18px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.reference-cruise-search__primary > label > span {
+  min-width: 0;
+  display: grid;
+}
+
+.reference-cruise-search__primary small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.reference-cruise-search__primary input,
+.reference-cruise-search__primary select {
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.reference-cruise-search__primary .btn-primary {
+  min-width: 120px;
+}
+
+.reference-cruise-search__secondary {
+  margin-top: 14px;
+  padding-top: 14px;
+  display: flex;
+  gap: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.reference-cruise-search__secondary label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.reference-cruise-search__secondary svg {
+  width: 16px;
+  color: var(--accent);
+}
+
+.reference-cruise-search__secondary input,
+.reference-cruise-search__secondary select {
+  width: auto;
+  min-height: 36px;
+  padding: 0 8px;
+}
+
+.reference-cruise-results {
+  padding: 80px 0 100px;
+  scroll-margin-top: 104px;
+}
+
+.reference-cruise-card {
+  grid-template-columns: 240px minmax(0, 1fr) 190px;
+  align-items: stretch;
+  cursor: pointer;
+}
+
+.reference-cruise-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  outline-offset: 3px;
+}
+
+.reference-cruise-card:active {
+  transform: translateY(1px);
+}
+
+.reference-cruise-card button,
+.reference-cruise-card select,
+.reference-cruise-card input {
+  cursor: pointer;
+}
+
+.reference-cruise-card .cruise-result__media {
+  margin: 8px;
+  border-radius: 18px;
+}
+
+.reference-cruise-card .cruise-result__price {
+  padding: 22px;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.reference-cruise-card .cruise-result__price .btn-primary {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.reference-cruise-assurance {
+  width: min(1200px, calc(100% - 64px));
+  margin: 0 auto 100px;
+  border-radius: 24px;
+}
+
+/* Cruise detail */
+.reference-detail-breadcrumbs,
+.reference-detail-navigation,
+.reference-detail-tabs,
+.reference-detail-layout {
+  width: min(1200px, calc(100% - 64px));
+  margin-inline: auto;
+}
+
+.reference-detail-breadcrumbs {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.reference-detail-breadcrumbs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reference-detail-breadcrumbs svg {
+  width: 16px;
+}
+
+.reference-detail-breadcrumbs strong {
+  overflow: hidden;
+  color: var(--text-soft);
+  text-overflow: ellipsis;
+}
+
+.reference-detail-carousel {
+  width: min(1392px, calc(100% - 48px));
+  height: min(56vw, 680px);
+  min-height: 520px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116px;
+  gap: 12px;
+}
+
+.reference-detail-carousel__main {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.reference-detail-carousel__main > button {
+  min-height: 42px;
+  padding: 0 14px;
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  background: rgba(16, 24, 40, 0.74);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.reference-detail-carousel__main > button svg {
+  width: 16px;
+}
+
+.reference-detail-carousel__main img,
+.reference-detail-carousel__thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reference-detail-carousel__thumbs {
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reference-detail-carousel__thumbs button {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-muted);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.reference-detail-carousel__thumbs button.is-active {
+  border-color: var(--accent-bright);
+  opacity: 1;
+}
+
+.reference-gallery-lightbox {
+  padding: 32px;
+  position: fixed;
+  z-index: 1600;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 76px;
+  gap: 16px;
+  background: rgba(8, 15, 24, 0.94);
+  backdrop-filter: blur(16px);
+}
+
+.reference-gallery-lightbox > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 18px;
+}
+
+.reference-gallery-lightbox > div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.reference-gallery-lightbox > div button {
+  width: 104px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  opacity: 0.58;
+  cursor: pointer;
+}
+
+.reference-gallery-lightbox > div button.is-active {
+  border-color: var(--accent-bright);
+  opacity: 1;
+}
+
+.reference-gallery-lightbox > div img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reference-gallery-lightbox__close {
+  width: 44px;
+  height: 44px;
+  position: absolute;
+  z-index: 1;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: rgba(16, 24, 40, 0.78);
+  color: #fff;
+  cursor: pointer;
+}
+
+.reference-detail-navigation {
+  padding: 64px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 40px;
+}
+
+.reference-detail-navigation > div:first-child > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.reference-detail-navigation svg {
+  width: 16px;
+  color: var(--accent);
+}
+
+.reference-detail-navigation h1 {
+  margin: 10px 0 16px;
+  font-size: clamp(2.1rem, 4.5vw, 3.7rem);
+  line-height: 1.08;
+}
+
+.reference-detail-navigation > div:first-child > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reference-detail-navigation > div:first-child > div > strong {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.reference-detail-navigation > div:first-child > div > span {
+  display: grid;
+}
+
+.reference-detail-navigation > div:first-child small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.reference-detail-navigation a {
+  margin-left: 14px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.reference-detail-navigation > div:last-child {
+  min-width: 230px;
+  display: grid;
+  justify-items: end;
+}
+
+.reference-detail-navigation > div:last-child > span,
+.reference-detail-navigation > div:last-child > small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.reference-detail-navigation > div:last-child > strong {
+  color: var(--accent);
+  font-size: 1.45rem;
+}
+
+.reference-detail-navigation > div:last-child .btn-primary {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.reference-detail-tabs {
+  position: sticky;
+  z-index: 20;
+  top: 80px;
+  padding: 10px;
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-elevated) 94%, transparent);
+  box-shadow: 0 14px 30px -26px rgba(16, 24, 40, 0.5);
+  backdrop-filter: blur(16px);
+  overflow-x: auto;
+}
+
+.reference-detail-tabs a {
+  min-height: 42px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  color: var(--text-soft);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.reference-detail-tabs a:hover {
+  background: var(--surface-muted);
+  color: var(--accent);
+}
+
+.reference-detail-layout {
+  padding: 56px 0 100px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 384px;
+  align-items: start;
+  gap: 32px;
+}
+
+.reference-detail-layout > main {
+  min-width: 0;
+  display: grid;
+  gap: 32px;
+}
+
+.reference-detail-section,
+.reference-room-section,
+.reference-detail-sidebar > div {
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-elevated);
+}
+
+.reference-detail-section {
+  scroll-margin-top: 160px;
+}
+
+.reference-detail-section > h2,
+.reference-room-section > div:first-child h2,
+.reference-detail-sidebar h2 {
+  margin: 0 0 24px;
+  font-size: 1.45rem;
+}
+
+.reference-detail-specs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reference-detail-specs article {
+  min-width: 0;
+  padding: 14px 10px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  border-radius: 16px;
+  background: var(--surface-muted);
+  text-align: center;
+}
+
+.reference-detail-specs svg {
+  width: 22px;
+  color: var(--accent-bright);
+}
+
+.reference-detail-specs span {
+  min-width: 0;
+  display: grid;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.reference-detail-specs strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+}
+
+.reference-detail-section > .reference-detail-specs + h2 {
+  margin-top: 36px;
+}
+
+.reference-detail-features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reference-detail-features article {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text-soft);
+  font-size: 0.76rem;
+}
+
+.reference-detail-features svg {
+  width: 19px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.reference-detail-section > p {
+  margin: 24px 0 0;
+  color: var(--text-soft);
+  line-height: 1.75;
+}
+
+.reference-room-section {
+  padding: 32px;
+  scroll-margin-top: 160px;
+  background: var(--surface-muted);
+}
+
+.reference-room-section > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.reference-room-section > div:first-child h2 {
+  margin: 0;
+}
+
+.reference-room-section > div:first-child button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reference-room-list {
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.reference-room-list > article {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-elevated);
+}
+
+.reference-room-list > article.is-selected {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-bright) 17%, transparent);
+}
+
+.reference-room-image {
+  width: 150px;
+  height: 112px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.reference-room-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reference-room-copy h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.reference-room-copy > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 12px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.reference-room-copy svg {
+  width: 14px;
+  color: var(--accent);
+}
+
+.reference-room-copy small {
+  margin-top: 8px;
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.reference-room-price {
+  display: grid;
+  justify-items: end;
+}
+
+.reference-room-price > strong {
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.reference-room-price > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.reference-room-price > div {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 34px 34px 34px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.reference-room-price > div button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: var(--surface-muted);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.reference-room-price > div button:disabled {
+  opacity: 0.35;
+}
+
+.reference-room-price > div svg {
+  width: 14px;
+}
+
+.reference-room-price > div b {
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.reference-detail-introduction img,
+.reference-itinerary-image {
+  width: 100%;
+  max-height: 420px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+.reference-detail-sidebar {
+  position: sticky;
+  top: 158px;
+  display: grid;
+  gap: 18px;
+}
+
+.reference-detail-sidebar > div:first-child {
+  display: grid;
+  gap: 12px;
+}
+
+.reference-detail-sidebar > div:first-child h2 {
+  margin-bottom: 6px;
+}
+
+.reference-detail-sidebar > div:first-child span {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.reference-detail-sidebar svg {
+  width: 17px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.reference-booking-card label {
+  display: grid;
+  gap: 6px;
+  margin-top: 13px;
+}
+
+.reference-booking-card label > span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.reference-booking-card > div {
+  margin-top: 18px;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.reference-booking-card > div span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.reference-booking-card > div strong {
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.reference-booking-card .btn-primary {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.reference-booking-card > p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.reference-itinerary-image + .mixi-itinerary {
+  margin-top: 24px;
+}
+
+@media (max-width: 1100px) {
+  .reference-flight-hero {
+    width: calc(100vw - 32px);
+  }
+
+  .reference-flight-search {
+    width: calc(100% - 32px);
+  }
+
+  .reference-flight-search__route {
+    grid-template-columns: 1fr 42px 1fr;
+  }
+
+  .reference-flight-search__route label:nth-of-type(3),
+  .reference-flight-search__route label:nth-of-type(4) {
+    grid-row: 2;
+  }
+
+  .reference-flight-search__route label:nth-of-type(3) {
+    grid-column: 1 / 2;
+  }
+
+  .reference-flight-search__route label:nth-of-type(4) {
+    grid-column: 2 / 4;
+  }
+
+  .reference-flight-search__options {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .reference-flight-search__options .btn-primary {
+    grid-column: 1 / -1;
+  }
+
+  .reference-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .reference-detail-specs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .reference-detail-features {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .reference-flight-hero {
+    height: auto;
+    min-height: 480px;
+    margin-bottom: 36px;
+    padding: 34px 20px;
+    overflow: hidden;
+  }
+
+  .reference-flight-hero__copy {
+    width: calc(100% - 48px);
+    top: 52px;
+    left: 24px;
+  }
+
+  .reference-flight-hero__copy h1 {
+    max-width: 520px;
+    font-size: clamp(2.25rem, 7vw, 3.8rem);
+  }
+
+  .reference-flight-search {
+    width: 100%;
+    margin-top: 330px;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    transform: none;
+  }
+
+  .reference-results-section,
+  .reference-flight-review,
+  .reference-airline-network,
+  .reference-cruise-results,
+  .reference-cruise-search,
+  .reference-cruise-assurance,
+  .reference-detail-breadcrumbs,
+  .reference-detail-navigation,
+  .reference-detail-tabs,
+  .reference-detail-layout {
+    width: min(100% - 40px, 760px);
+  }
+
+  .reference-results-section {
+    padding-top: 60px;
+  }
+
+  .reference-flight-review,
+  .reference-airline-network {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-flight-review__image {
+    min-height: 330px;
+  }
+
+  .reference-airline-network {
+    gap: 30px;
+  }
+
+  .reference-cruise-search__primary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reference-results-section .travel-results-layout,
+  .reference-cruise-results .travel-results-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-cruise-search__primary .btn-primary {
+    grid-column: 1 / -1;
+  }
+
+  .reference-cruise-card {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .reference-cruise-card .cruise-result__price {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .reference-cruise-card .cruise-result__price .btn-primary {
+    width: auto;
+    margin: 0 0 0 auto;
+  }
+
+  .reference-detail-carousel {
+    width: calc(100% - 24px);
+    min-height: 470px;
+    padding: 0;
+  }
+
+  .reference-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-detail-sidebar {
+    position: static;
+    grid-row: 1;
+  }
+
+  .reference-detail-sidebar > div:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .reference-flight-hero {
+    width: calc(100% - 16px);
+    min-height: 410px;
+    border-radius: 18px;
+  }
+
+  .reference-flight-hero__copy {
+    top: 38px;
+  }
+
+  .reference-flight-search {
+    margin-top: 270px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .reference-flight-search__route,
+  .reference-flight-search__options {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-airport-swap {
+    margin: 0 auto;
+    transform: rotate(90deg);
+  }
+
+  .reference-flight-search__route label:nth-of-type(3),
+  .reference-flight-search__route label:nth-of-type(4),
+  .reference-flight-search__options .btn-primary {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .reference-results-section,
+  .reference-flight-review,
+  .reference-airline-network,
+  .reference-cruise-results,
+  .reference-cruise-search,
+  .reference-cruise-assurance,
+  .reference-detail-breadcrumbs,
+  .reference-detail-navigation,
+  .reference-detail-tabs,
+  .reference-detail-layout {
+    width: calc(100% - 24px);
+  }
+
+  .reference-results-heading,
+  .reference-cruise-results__header,
+  .reference-detail-navigation {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reference-results-heading,
+  .reference-cruise-results__header {
+    display: flex;
+  }
+
+  .reference-flight-review {
+    padding: 64px 0;
+  }
+
+  .reference-flight-review__image + div {
+    padding: 26px;
+  }
+
+  .reference-airline-network > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-cruise-search {
+    margin-top: 12px;
+    padding: 42px 14px 18px;
+    border-radius: 22px;
+  }
+
+  .reference-cruise-search form {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .reference-cruise-search__primary {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-cruise-search__primary .btn-primary {
+    grid-column: auto;
+  }
+
+  .reference-cruise-search__secondary {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .reference-cruise-search__secondary label {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+  }
+
+  .reference-cruise-search__secondary input,
+  .reference-cruise-search__secondary select {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .reference-cruise-results {
+    padding: 60px 0 72px;
+  }
+
+  .reference-cruise-card {
+    display: block;
+  }
+
+  .reference-cruise-card .cruise-result__media {
+    min-height: 220px;
+  }
+
+  .reference-cruise-card .cruise-result__price {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reference-cruise-card .cruise-result__price .btn-primary {
+    width: 100%;
+    margin: 10px 0 0;
+  }
+
+  .reference-detail-carousel {
+    height: auto;
+    min-height: 0;
+    display: block;
+  }
+
+  .reference-detail-carousel__main {
+    height: 360px;
+  }
+
+  .reference-detail-carousel__thumbs {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 76px;
+  }
+
+  .reference-detail-navigation {
+    padding: 42px 0;
+    display: flex;
+  }
+
+  .reference-detail-navigation > div:last-child {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .reference-detail-navigation a {
+    display: none;
+  }
+
+  .reference-detail-tabs {
+    top: 80px;
+  }
+
+  .reference-detail-layout {
+    padding: 32px 0 72px;
+  }
+
+  .reference-detail-section,
+  .reference-room-section,
+  .reference-detail-sidebar > div {
+    padding: 22px;
+  }
+
+  .reference-detail-specs,
+  .reference-detail-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reference-room-list > article {
+    grid-template-columns: 100px 1fr;
+  }
+
+  .reference-room-image {
+    width: 100px;
+    height: 96px;
+  }
+
+  .reference-room-price {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    justify-items: start;
+  }
+
+  .reference-room-price > span {
+    display: none;
+  }
+
+  .reference-room-price > div {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .reference-flight-hero__copy h1 {
+    font-size: 2.1rem;
+  }
+
+  .reference-flight-search__tabs label {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 8px;
+    font-size: 0.7rem;
+  }
+
+  .reference-detail-carousel__main {
+    height: 280px;
+  }
+
+  .reference-detail-specs,
+  .reference-detail-features {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-room-list > article {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-room-image {
+    width: 100%;
+    height: 180px;
+  }
+}
+
+/* Shared opening hero for the hotel, cruise and flight catalogs. */
+.route-stage:not(:has(.home-page)):not(:has(.mixi-home-page)):has(.catalog-media-hero) {
+  padding-top: 0;
+}
+
+.reference-hotel-page:has(.catalog-media-hero),
+.reference-cruise-page:has(.catalog-media-hero) {
+  padding-top: 0;
+}
+
+.catalog-media-hero {
+  --catalog-panel-bottom: -154px;
+  --catalog-space-after: 230px;
+  width: min(1480px, calc(100vw - 32px));
+  height: clamp(600px, 68vw, 820px);
+  margin: 24px auto var(--catalog-space-after);
+  position: relative;
+  isolation: isolate;
+}
+
+.catalog-media-hero--flight {
+  --catalog-panel-bottom: -282px;
+  --catalog-space-after: 354px;
+}
+
+.catalog-media-hero__media {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--surface-muted);
+}
+
+.catalog-media-hero__media > img,
+.catalog-media-hero__media > video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.catalog-media-hero__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(8 26 30 / 0.02), rgb(8 26 30 / 0.28));
+  pointer-events: none;
+}
+
+.catalog-media-hero__panel {
+  width: min(1008px, calc(100% - 64px));
+  position: absolute;
+  z-index: 2;
+  right: 50%;
+  bottom: var(--catalog-panel-bottom);
+  transform: translateX(50%);
+  padding: 34px 24px 24px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-elevated);
+  box-shadow: 0 34px 72px -38px rgb(16 24 40 / 0.45);
+}
+
+.catalog-media-hero--hotel .catalog-media-hero__panel,
+.catalog-media-hero--flight .catalog-media-hero__panel {
+  width: min(1240px, calc(100% - 64px));
+}
+
+.catalog-media-hero--flight .catalog-media-hero__panel {
+  width: min(1100px, calc(100% - 64px));
+}
+
+.catalog-media-hero__heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.catalog-media-hero__heading h1 {
+  margin: 0 0 7px;
+  color: var(--text);
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.catalog-media-hero__heading p {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.catalog-media-hero .reference-cruise-search,
+.catalog-media-hero .reference-flight-search,
+.catalog-media-hero .travel-search-panel {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: static;
+  right: auto;
+  bottom: auto;
+  transform: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.catalog-media-hero .reference-flight-search__tabs {
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.catalog-media-hero .reference-flight-search__tabs input {
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.catalog-hotel-search {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+}
+
+.catalog-hotel-search > .travel-search-panel__grid {
+  min-width: 0;
+  flex: 1;
+}
+
+.catalog-hotel-search > .btn-primary {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.catalog-hotel-search > .form-error {
+  width: 100%;
+  order: 3;
+}
+
+@media (max-width: 1180px) {
+  .catalog-media-hero {
+    height: 570px;
+  }
+
+  .catalog-hotel-search {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalog-hotel-search > .btn-primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .catalog-media-hero,
+  .catalog-media-hero--flight {
+    width: calc(100vw - 32px);
+    height: auto;
+    margin: 16px auto 56px;
+  }
+
+  .catalog-media-hero__media {
+    height: 570px;
+    position: relative;
+  }
+
+  .catalog-media-hero__panel,
+  .catalog-media-hero--hotel .catalog-media-hero__panel,
+  .catalog-media-hero--flight .catalog-media-hero__panel {
+    width: calc(100% - 32px);
+    margin: -72px auto 0;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    transform: none;
+  }
+
+  .catalog-media-hero .reference-flight-search,
+  .catalog-media-hero .reference-cruise-search {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .catalog-media-hero,
+  .catalog-media-hero--flight {
+    width: calc(100% - 16px);
+    margin-bottom: 44px;
+  }
+
+  .catalog-media-hero__media {
+    height: 440px;
+    border-radius: 18px;
+  }
+
+  .catalog-media-hero__panel,
+  .catalog-media-hero--hotel .catalog-media-hero__panel,
+  .catalog-media-hero--flight .catalog-media-hero__panel {
+    width: calc(100% - 16px);
+    margin-top: -52px;
+    padding: 24px 16px 16px;
+    border-radius: 20px;
+  }
+
+  .catalog-media-hero__heading {
+    margin-bottom: 18px;
+  }
+
+  .catalog-media-hero__heading h1 {
+    font-size: clamp(1.65rem, 8vw, 2.15rem);
+  }
+
+  .catalog-media-hero__heading p {
+    font-size: 0.78rem;
+  }
+
+  .catalog-media-hero .reference-flight-search,
+  .catalog-media-hero .reference-cruise-search {
+    margin-top: 0;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reference-flight-page *,
+  .reference-cruise-page *,
+  .reference-hotel-page *,
+  .reference-cruise-detail * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
