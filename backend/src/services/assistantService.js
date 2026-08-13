@@ -47,13 +47,6 @@ const BLOG_POSTS = [
   },
 ];
 
-const BASE_SUGGESTIONS = [
-  'Gợi ý du thuyền Hạ Long / Lan Hạ',
-  'Tìm vé máy bay giá rẻ',
-  'Có gói nghỉ dưỡng nào dưới 5 triệu?',
-  'Hotline hỗ trợ & Quy trình đặt phòng',
-];
-
 const CITY_ALIASES = {
   'da nang': 'Đà Nẵng',
   danang: 'Đà Nẵng',
@@ -90,16 +83,18 @@ const INTENT_RULES = [
   { key: 'hotel', patterns: ['khach san', 'resort', 'villa', 'cho nghi', 'hotel', 'nghi duong', 'luu tru'], label: 'khách sạn & resort' },
   { key: 'room', patterns: ['phong', 'gia phong', 'loai phong', 'phong don', 'phong doi', 'suite', 'deluxe', 'dien tich', 'view', 'giuong'], label: 'phòng & loại phòng' },
   { key: 'beach', patterns: ['bien', 'beach', 'dao', 'ocean', 'tam bien', 'gan bien'], label: 'gần biển' },
-  { key: 'family', patterns: ['gia dinh', 'tre em', 'nhom', 'family', 'bo me', 'con nho'], label: 'gia đình' },
+  { key: 'family', patterns: ['gia dinh', 'tre em', 'nhom', 'family', 'bo me', 'con nho', 'con truyen', 'tre nho', 'con cai'], label: 'gia đình' },
+  { key: 'couple', patterns: ['cap doi', 'hai nguoi', '2 nguoi', 'vo chồng', 'lang man', 'honeymoon', 'trang mật', 'hen ho'], label: 'cặp đôi / lãng mạn' },
   { key: 'package', patterns: ['goi nghi', 'goi du lich', 'combo', 'tron goi', 'staycation', 'uu dai'], label: 'gói combo trọn gói' },
   { key: 'booking', patterns: ['thanh toan', 'vietqr', 'vnpay', 'momo', 'qr', 'dat phong', 'huy phong', 'don cua toi', 'tich diem', 'xu', 'dat cho', 'giu cho'], label: 'thủ tục & thanh toán' },
   { key: 'corporate', patterns: ['doanh nghiep', 'cong ty', 'doan', 'mice', 'team building', 'hoi thao'], label: 'du lịch doanh nghiệp' },
   { key: 'contact', patterns: ['hotline', 'lien he', 'so dien thoai', 'tong dai', 'dia chi', 'ho tro'], label: 'liên hệ & hỗ trợ' },
-  { key: 'compare', patterns: ['so sanh', 'khac nhau', 'nao tot hon', 'chon gi', 'hay la', 'nen chon'], label: 'so sánh' },
+  { key: 'compare', patterns: ['so sanh', 'khac nhau', 'nao tot hon', 'chon gi', 'hay la', 'nen chon', 'uu diem', 'khuyen nghi'], label: 'so sánh' },
   { key: 'policy', patterns: ['chinh sach', 'quy dinh', 'huy don', 'huy phong', 'huy dat', 'hoan tien', 'dieu kien', 'luu y'], label: 'chính sách' },
   { key: 'airport', patterns: ['san bay', 'airport', 'noi bai', 'tan son nhat', 'da nang airport', 'cam ranh'], label: 'sân bay' },
-  { key: 'feature', patterns: ['tien ich', 'dich vu', 'spa', 'be boi', 'kayak', 'gym', 'wifi', 'bua an', 'buffet', 'nau an'], label: 'tiện ích & dịch vụ' },
-  { key: 'price', patterns: ['gia', 're nhat', 'dat nhat', 'bao nhieu', 'chi phi', 'ngan sach', 'budget'], label: 'giá cả' },
+  { key: 'feature', patterns: ['tien ich', 'dich vu', 'spa', 'be boi', 'kayak', 'gym', 'wifi', 'bua an', 'buffet', 'nau an', 'ban cong', 'view bien', 'an sang'], label: 'tiện ích & dịch vụ' },
+  { key: 'price', patterns: ['gia', 're nhat', 'dat nhat', 'bao nhieu', 'chi phi', 'ngan sach', 'budget', 'tong tien', 'tiet kiem'], label: 'giá cả' },
+  { key: 'itinerary', patterns: ['lich trinh', 'choi gi', 'di dau', 'may ngay', 'goi y', 'giao luu', 'trai nghiem'], label: 'lịch trình du lịch' },
 ];
 
 function normalize(value = '') {
@@ -127,34 +122,52 @@ function extractBudget(message) {
   return Number(currencyMatch[1].replace(/[.,]/g, '')) || null;
 }
 
-function extractTripProfile(message) {
-  const normalized = normalize(message);
-  const city = Object.entries(CITY_ALIASES).find(([alias]) => normalized.includes(alias))?.[1] || null;
-  const budget = extractBudget(message);
+/* ────────────────────── MULTI-TURN CONTEXT AGGREGATION ────────────────────── */
+
+function extractTripProfile(message, history = []) {
+  // Combine historical messages + current message to retain context across multi-turn chat
+  const historyText = history.map((item) => normalize(item.content)).join(' ');
+  const currentNormalized = normalize(message);
+  const combinedText = `${historyText} ${currentNormalized}`;
+
+  const city = Object.entries(CITY_ALIASES).find(([alias]) => combinedText.includes(alias))?.[1] || null;
+  const budget = extractBudget(message) || extractBudget(historyText);
+
   const intents = INTENT_RULES
-    .filter((rule) => includesAny(normalized, rule.patterns))
+    .filter((rule) => includesAny(currentNormalized, rule.patterns))
     .map((rule) => rule.key);
-  const nightsMatch = normalized.match(/(\d+)\s*(?:dem|ngay)/);
-  const guestsMatch = normalized.match(/(\d+)\s*(?:nguoi|khach|ban|nguoi lon)/);
+
+  const nightsMatch = combinedText.match(/(\d+)\s*(?:dem|ngay)/);
+  const guestsMatch = combinedText.match(/(\d+)\s*(?:nguoi|khach|ban|nguoi lon)/);
 
   return {
-    normalized,
+    normalized: currentNormalized,
+    combinedText,
     city,
     budget,
     intents: [...new Set(intents)],
     nights: nightsMatch ? Number(nightsMatch[1]) : null,
     guests: guestsMatch ? Number(guestsMatch[1]) : null,
+    isFamily: includesAny(combinedText, ['gia dinh', 'tre em', 'con nho', 'bo me']),
+    isCouple: includesAny(combinedText, ['cap doi', '2 nguoi', 'vo chong', 'honeymoon']),
+    isLuxury: includesAny(combinedText, ['cao cap', '5 sao', 'sang trong', 'luxury']),
   };
 }
+
+/* ────────────────────── SMART RANKING ALGORITHMS ────────────────────── */
 
 function rankHotels(hotels, message, profile) {
   const scoredHotels = hotels
     .map((hotel) => {
       let score = 0;
-      if (profile.city && hotel.city === profile.city) score += 14;
-      if (profile.guests && hotel.room_preview?.some((r) => r.max_occupancy >= profile.guests)) score += 4;
-      if (profile.budget && hotel.min_price && hotel.min_price <= profile.budget) score += 6;
+      if (profile.city && hotel.city === profile.city) score += 16;
+      if (profile.guests && hotel.room_preview?.some((r) => r.max_occupancy >= profile.guests)) score += 6;
+      if (profile.budget && hotel.min_price && hotel.min_price <= profile.budget) score += 8;
+      if (profile.isFamily && (hotel.stay_types?.includes('family') || hotel.highlights?.some((h) => normalize(h).includes('gia dinh')))) score += 6;
+      if (profile.isCouple && (hotel.stay_types?.includes('boutique') || hotel.stay_types?.includes('villa'))) score += 4;
+      if (profile.isLuxury && hotel.star_rating === 5) score += 6;
       if (hotel.avg_rating) score += hotel.avg_rating / 10;
+
       return { hotel, score: Math.round(score * 10) / 10 };
     })
     .sort((a, b) => b.score - a.score || (a.hotel.min_price || Infinity) - (b.hotel.min_price || Infinity));
@@ -165,6 +178,8 @@ function rankHotels(hotels, message, profile) {
     city: hotel.city,
     min_price: hotel.min_price,
     cover_image: hotel.cover_image,
+    star_rating: hotel.star_rating,
+    avg_rating: hotel.avg_rating,
     score,
   }));
 }
@@ -173,9 +188,10 @@ function rankCruises(cruises, profile) {
   const scored = cruises
     .map((cruise) => {
       let score = 0;
-      if (profile.city && (cruise.destination.includes(profile.city) || profile.city.includes(cruise.destination))) score += 12;
-      if (profile.budget && cruise.price <= profile.budget) score += 8;
-      if (profile.nights && cruise.durationDays === profile.nights) score += 5;
+      if (profile.city && (cruise.destination.includes(profile.city) || profile.city.includes(cruise.destination))) score += 14;
+      if (profile.budget && cruise.price <= profile.budget) score += 10;
+      if (profile.nights && cruise.durationDays === profile.nights) score += 6;
+      if (profile.isFamily && cruise.features?.some((f) => normalize(f).includes('gia dinh') || normalize(f).includes('tre em') || normalize(f).includes('be boi'))) score += 6;
       if (cruise.rating) score += cruise.rating;
       return { cruise, score };
     })
@@ -210,20 +226,17 @@ function rankPackages(packages, profile) {
 }
 
 function rankFlights(message, profile) {
-  const text = normalize(message);
-  const airportCodes = AIRPORTS.map((a) => a.code.toLowerCase());
+  const text = profile.combinedText;
 
   return FLIGHTS.filter((flight) => {
     if (profile.budget && flight.price > profile.budget) return false;
-    // Match by origin/destination city or code mentioned in message
     const originMatch = text.includes(flight.origin.toLowerCase()) ||
       AIRPORTS.find((a) => a.code === flight.origin && normalize(a.city).split(' ').some((w) => w.length > 2 && text.includes(w)));
     const destMatch = text.includes(flight.destination.toLowerCase()) ||
       AIRPORTS.find((a) => a.code === flight.destination && normalize(a.city).split(' ').some((w) => w.length > 2 && text.includes(w)));
-    // If user mentions specific route, filter for it
     if (originMatch && destMatch) return true;
     if (originMatch || destMatch) return true;
-    return true; // fallback: include all within budget
+    return true;
   }).slice(0, 5);
 }
 
@@ -239,42 +252,42 @@ function rankArticles(message) {
 
 function buildLocalAnswer(message, profile, matches, packageMatches, cruiseMatches, flightMatches, articleMatches, hotels, cruises) {
   if (/(^|\s)(xin chao|chao|hello|hi)(\s|$)/.test(profile.normalized)) {
-    return 'Chào bạn, mình là Vi, trợ lý AI thông minh của Dibaoxa. Bạn có thể hỏi mình về Du thuyền Hạ Long/Lan Hạ, Vé máy bay, Khách sạn & Resort, Gói ưu đãi, Kinh nghiệm du lịch hoặc Quy trình thanh toán QR nhé!';
+    return '👋 Chào bạn, mình là Vi - chuyên viên tư vấn du lịch thông minh của Dibaoxa!\n\nMình có thể giúp bạn thiết kế chuyến đi hoàn hảo: tìm **Du thuyền 5 sao Hạ Long/Lan Hạ**, săn **Vé máy bay giá tốt**, chọn **Khách sạn & Resort**, gợi ý **Gói combo trọn gói**, hay hỗ trợ quy trình **Thanh toán VietQR**. Bạn muốn khám phá điểm đến nào hôm nay?';
   }
 
   if (profile.intents.includes('contact')) {
-    return 'Dịch vụ CSKH Dibaoxa luôn sẵn sàng hỗ trợ bạn qua Hotline tư vấn: 1900 8899 (8:00 - 21:00 hàng ngày) hoặc nút "Liên hệ" trực tiếp trên giao diện website.';
+    return '📞 **Thông tin CSKH Dibaoxa:**\n- **Hotline tư vấn (8:00 - 21:00):** 1900 8899\n- **Hỗ trợ trực tuyến:** Bấm nút "Liên hệ" trên thanh menu website.\n- **Email:** cskh@dibaoxa.vn\n\nĐội ngũ chuyên viên sẵn sàng hỗ trợ bạn lựa chọn dịch vụ và xử lý đơn đặt 24/7!';
   }
 
   if (profile.intents.includes('corporate')) {
-    return 'Dibaoxa cung cấp giải pháp du lịch doanh nghiệp MICE, Team Building và Hội thảo trọn gói bao gồm du thuyền, khách sạn và vé máy bay cho đoàn từ 10 đến hơn 100 khách. Hãy chọn tab "Doanh nghiệp" để gửi yêu cầu báo giá!';
+    return '🏢 **Giải pháp Du lịch Doanh nghiệp MICE & Team Building Dibaoxa:**\n- Thiết kế chương trình trọn gói bao gồm Du thuyền, Khách sạn 5 sao, Vé máy bay đoàn.\n- Hỗ trợ tổ chức Hội thảo, Gala Dinner, và hoạt động Teambuilding cho đoàn từ 10 đến hơn 200 khách.\n- Chiết khấu hấp dẫn và xuất hóa đơn VAT đầy đủ.\n\n👉 Hãy chuyển sang tab **"Doanh nghiệp"** để gửi thông tin đoàn và nhận báo giá ưu đãi trong 30 phút!';
   }
 
   if (profile.intents.includes('booking')) {
-    return 'Trên Dibaoxa, bạn có thể giữ chỗ trong 10 phút, thanh toán dễ dàng qua mã VietQR hoặc VNPay. Sau khi thanh toán thành công, mã đặt chỗ và mã QR check-in tự động xuất hiện trong mục "Đơn của tôi". Bạn được tích điểm thưởng Xu cho mỗi giao dịch thành công.';
+    return '💳 **Quy trình Đặt chỗ & Thanh toán VietQR trên Dibaoxa:**\n1. **Chọn dịch vụ:** Lựa chọn phòng khách sạn, vé máy bay hoặc hải trình du thuyền.\n2. **Giữ chỗ 10 phút:** Hệ thống khóa chỗ giữ giá cho bạn.\n3. **Thanh toán tức thì:** Quét mã **VietQR** hoặc qua **VNPay**.\n4. **Nhận vé & Check-in:** Mã đặt chỗ kèm **QR Check-in tự động** sẽ hiển thị trong mục **"Đơn của tôi"**.\n🎁 *Đặc biệt:* Bạn sẽ nhận được điểm thưởng **Xu thành viên** (1 Xu = 10.000đ) ngay sau khi đơn được xác nhận!';
   }
 
   if (profile.intents.includes('airport')) {
-    const text = normalize(message);
+    const text = profile.normalized;
     const regionKeywords = { 'mien bac': 'Miền Bắc', 'mien trung': 'Miền Trung', 'mien nam': 'Miền Nam', 'tay nguyen': 'Tây Nguyên' };
     const matchedRegion = Object.entries(regionKeywords).find(([alias]) => text.includes(alias));
     if (matchedRegion) {
       const regionAirports = AIRPORTS.filter((a) => a.region === matchedRegion[1]);
-      const list = regionAirports.map((a) => `${a.code} - ${a.name} (${a.city})`).join('; ');
-      return `Sân bay khu vực ${matchedRegion[1]} trên Dibaoxa: ${list}.`;
+      const list = regionAirports.map((a) => `• **${a.code}** - ${a.name} (${a.city})`).join('\n');
+      return `✈️ **Danh sách Cảng hàng không khu vực ${matchedRegion[1]}:**\n\n${list}\n\nBạn muốn tìm đường bay từ/đến sân bay nào?`;
     }
-    return `Dibaoxa hỗ trợ ${AIRPORTS.length} sân bay trong nước. Bạn có thể hỏi mình sân bay cụ thể theo vùng miền (Bắc/Trung/Nam/Tây Nguyên).`;
+    return `✈️ Dibaoxa kết nối **${AIRPORTS.length} cảng hàng không toàn quốc**. Bạn có thể tra cứu theo khu vực (Miền Bắc, Miền Trung, Miền Nam, Tây Nguyên) hoặc theo mã sân bay (Nội Bài HAN, Tân Sơn Nhất SGN, Đà Nẵng DAD...).`;
   }
 
-  // Feature-based search (e.g. "du thuyền nào có spa?") — must come before policy
+  // Feature-based search (e.g. "du thuyền nào có spa?")
   if (profile.intents.includes('feature')) {
-    const text = normalize(message);
+    const text = profile.normalized;
     const featureSynonyms = [
-      { key: 'spa', patterns: ['spa', 'jacuzzi', 'be suc', 'massage'] },
-      { key: 'bể bơi', patterns: ['be boi', 'pool', 'jacuzzi'] },
-      { key: 'kayak', patterns: ['kayak', 'cheo thuyền', 'cheo kayak'] },
-      { key: 'bữa ăn', patterns: ['bua an', 'buffet', 'nha hang', 'thuc don'] },
-      { key: 'ban công', patterns: ['ban cong', 'balcony'] },
+      { key: 'Spa & Bể sục', patterns: ['spa', 'jacuzzi', 'be suc', 'massage'] },
+      { key: 'Bể bơi', patterns: ['be boi', 'pool', 'jacuzzi'] },
+      { key: 'Chèo Kayak', patterns: ['kayak', 'cheo thuyen', 'cheo kayak'] },
+      { key: 'Nhà hàng & Bữa ăn', patterns: ['bua an', 'buffet', 'nha hang', 'thuc don'] },
+      { key: 'Ban công riêng', patterns: ['ban cong', 'balcony'] },
     ];
     const matchedFeature = featureSynonyms.find((item) => item.patterns.some((p) => text.includes(p)));
     if (matchedFeature && cruises?.length) {
@@ -282,73 +295,77 @@ function buildLocalAnswer(message, profile, matches, packageMatches, cruiseMatch
         c.features?.some((f) => matchedFeature.patterns.some((p) => normalize(f).includes(p)))
       );
       if (matching.length) {
-        const list = matching.map((c) => `"${c.name}" (${c.destination}, ${formatPrice(c.price)}đ)`).join(', ');
-        return `Du thuyền có ${matchedFeature.key}: ${list}. Chọn tab "Du thuyền" để xem chi tiết!`;
+        const list = matching.map((c) => `• **${c.name}** (${c.destination}) - Giá từ **${formatPrice(c.price)}đ/khách**`).join('\n');
+        return `⚓ **Các du thuyền trang bị ${matchedFeature.key}:**\n\n${list}\n\n👉 Chọn thẻ sản phẩm bên dưới hoặc tab **"Du thuyền"** để xem hải trình chi tiết!`;
       }
     }
   }
 
   if (profile.intents.includes('policy')) {
-    const relevantCruise = cruises?.find((c) => normalize(message).includes(normalize(c.name)) || normalize(message).includes(normalize(c.destination)));
+    const relevantCruise = cruises?.find((c) => profile.normalized.includes(normalize(c.name)) || profile.normalized.includes(normalize(c.destination)));
     if (relevantCruise?.policies?.length) {
-      return `Chính sách du thuyền "${relevantCruise.name}": ${relevantCruise.policies.slice(0, 3).join('. ')}. Xem đầy đủ tại trang chi tiết du thuyền.`;
+      const policiesList = relevantCruise.policies.slice(0, 3).map((p) => `• ${p}`).join('\n');
+      return `📋 **Chính sách du thuyền "${relevantCruise.name}":**\n\n${policiesList}\n\nXem chi tiết tại trang sản phẩm hoặc liên hệ 1900 8899.`;
     }
-    return 'Bạn có thể xem chính sách chi tiết tại trang sản phẩm tương ứng (Du thuyền, Khách sạn...). Nếu cần hỗ trợ thêm, gọi Hotline 1900 8899.';
+    return '📋 **Chính sách đặt & hủy phòng:**\n- Hầu hết sản phẩm giữ chỗ miễn phí 10 phút trước thanh toán.\n- Điều kiện đổi/hủy chi tiết tùy thuộc vào từng khách sạn, du thuyền hoặc hạng vé máy bay.\n- Kiểm tra cụ thể tại phần **"Chính sách"** trên trang sản phẩm.';
   }
 
   if (profile.intents.includes('compare') && cruiseMatches.length >= 2) {
     const [a, b] = cruiseMatches;
-    return `So sánh: "${a.name}" (${a.destination}, ${a.durationDays} ngày, ${formatPrice(a.price)}đ, ${a.rating}/10) vs "${b.name}" (${b.destination}, ${b.durationDays} ngày, ${formatPrice(b.price)}đ, ${b.rating}/10). Xem chi tiết từng du thuyền để chọn phù hợp!`;
+    return `⚖️ **So sánh du thuyền nổi bật:**\n\n1. **${a.name}** (${a.destination})\n   - Thời lượng: ${a.durationDays} ngày\n   - Giá: từ **${formatPrice(a.price)}đ/khách**\n   - Đánh giá: ⭐ ${a.rating}/10\n\n2. **${b.name}** (${b.destination})\n   - Thời lượng: ${b.durationDays} ngày\n   - Giá: từ **${formatPrice(b.price)}đ/khách**\n   - Đánh giá: ⭐ ${b.rating}/10\n\n👉 Bạn ưa thích hải trình ngắn gọn 2N1Đ hay muốn trải nghiệm nghỉ sâu hơn?`;
   }
 
   if (profile.intents.includes('flight')) {
     if (flightMatches.length) {
-      const flight = flightMatches[0];
-      return `Về vé máy bay, chuyến ${flight.code} (${flight.airline}) từ ${flight.origin} đi ${flight.destination} có giá chỉ từ ${formatPrice(flight.price)}đ (Giờ bay ${flight.depart} - ${flight.arrive}, hành lý ${flight.baggage}, máy bay ${flight.aircraft}, còn ${flight.seatsLeft} ghế). Chọn tab "Vé máy bay" để tìm kiếm chuyến bay phù hợp!`;
+      const flightList = flightMatches.slice(0, 3).map((f) =>
+        `• **${f.code}** (${f.airline}): ${f.origin} → ${f.destination} | ${f.depart} - ${f.arrive} | Giá từ **${formatPrice(f.price)}đ** (${f.baggage})`
+      ).join('\n');
+      return `✈️ **Các chuyến bay phù hợp dành cho bạn:**\n\n${flightList}\n\n👉 Chọn tab **"Vé máy bay"** để xem thêm tùy chọn giờ bay và hạng vé!`;
     }
-    return 'Dibaoxa hỗ trợ so sánh vé máy bay trực tiếp từ các hãng Vietnam Airlines, Vietjet Air, Bamboo Airways, Vietravel Airlines. Bạn hãy chuyển sang tab "Vé máy bay" để tìm chặng bay nhé!';
+    return '✈️ Dibaoxa kết nối dữ liệu bay trực tiếp từ **Vietnam Airlines, Vietjet Air, Bamboo Airways, Vietravel Airlines**. Chuyển sang tab **"Vé máy bay"** để tìm đường bay của bạn nhé!';
   }
 
   if (profile.intents.includes('hotel') || profile.intents.includes('room')) {
     if (matches.length) {
-      const [first, second] = matches;
-      const firstPrice = first.min_price ? ` từ ${formatPrice(first.min_price)}đ/đêm` : '';
-      const secondText = second ? ` Ngoài ra còn có ${second.name} tại ${second.city}.` : '';
-      return `Dành cho chỗ nghỉ, mình gợi ý ${first.name} tại ${first.city}${firstPrice}.${secondText} Chọn thẻ bên dưới để xem chi tiết phòng!`;
+      const hotelList = matches.map((h) =>
+        `• **${h.name}** (${h.city}): Giá từ **${formatPrice(h.min_price)}đ/đêm** | ⭐ ${h.avg_rating || h.star_rating}/5`
+      ).join('\n');
+      const familyNote = profile.isFamily ? '\n💡 *Các chỗ nghỉ trên đều có phòng rộng rãi cho gia đình và trẻ nhỏ.*' : '';
+      return `🏨 **Gợi ý chỗ nghỉ hàng đầu tại ${profile.city || 'điểm đến'}:**\n\n${hotelList}${familyNote}\n\n👉 Bấm vào các thẻ bên dưới để xem danh sách phòng chi tiết!`;
     }
-    return 'Dibaoxa có nhiều khách sạn & resort cao cấp từ 4-5 sao tại Đà Nẵng, Phú Quốc, Hạ Long, Nha Trang... Bạn hãy chọn tab "Khách sạn" để xem phòng trống!';
+    return '🏨 Dibaoxa có hàng trăm khách sạn & resort 4-5 sao tuyển chọn tại Đà Nẵng, Phú Quốc, Hạ Long, Nha Trang, Đà Lạt... Bạn hãy chọn tab **"Khách sạn"** để tìm chỗ nghỉ ưng ý!';
   }
 
-  if (profile.intents.includes('package') || packageMatches.length) {
+  if (profile.intents.includes('package')) {
     if (packageMatches.length) {
       const pkg = packageMatches[0];
-      const includedText = pkg.included?.length ? ` Bao gồm: ${pkg.included.slice(0, 3).join(', ')}.` : '';
-      return `Gói ưu đãi hot nhất hiện tại: "${pkg.title}" tại ${pkg.destination} (${pkg.duration}) với giá trọn gói chỉ ${formatPrice(pkg.price)}đ.${includedText} Xem thêm trong mục "Gói ưu đãi"!`;
+      const includedText = pkg.included?.length ? `\n🎁 *Bao gồm:* ${pkg.included.join(', ')}.` : '';
+      return `🎁 **Gói ưu đãi trọn gói HOT nhất:**\n\n**${pkg.title}** (${pkg.destination} - ${pkg.duration})\nGiá trọn gói: **${formatPrice(pkg.price)}đ**${includedText}\n\nXem chi tiết tại mục **"Gói ưu đãi"**!`;
     }
+    return '🎁 Dibaoxa có nhiều gói combo ưu đãi trọn gói bao gồm chỗ nghỉ, bữa ăn và dịch vụ đi kèm. Hãy chuyển sang tab **"Gói ưu đãi"** để khám phá nhé!';
   }
 
   if (profile.intents.includes('cruise') || (profile.city && ['Hạ Long', 'Lan Hạ'].includes(profile.city))) {
     if (cruiseMatches.length) {
       const top = cruiseMatches[0];
-      const featuresText = top.features?.length ? `. Tiện ích: ${top.features.slice(0, 4).join(', ')}` : '';
-      return `Về du thuyền, mình gợi ý hải trình nổi bật "${top.name}" thuộc ${top.operator} tại ${top.destination} (${top.durationDays} ngày), khởi hành từ ${top.departurePort || 'cảng chính'}, giá từ ${formatPrice(top.price)}đ/khách (Đánh giá ${top.rating}/10)${featuresText}. Bạn chọn tab "Du thuyền" để xem chi tiết nhé!`;
+      const featuresText = top.features?.length ? `\n✨ *Tiện ích nổi bật:* ${top.features.slice(0, 4).join(' • ')}` : '';
+      return `⚓ **Gợi ý hải trình du thuyền đẳng cấp:**\n\n**${top.name}** (${top.operator})\n• Hải trình: ${top.destination} (${top.durationDays} ngày)\n• Cảng khởi hành: ${top.departurePort || 'Cảng Tuần Châu/Cát Hải'}\n• Giá ưu đãi: **${formatPrice(top.price)}đ/khách** (⭐ ${top.rating}/10)${featuresText}\n\n👉 Bấm tab **"Du thuyền"** để xem chi tiết!`;
     }
-    return 'Dibaoxa có nhiều du thuyền 4-5 sao tuyển chọn tại Hạ Long & Lan Hạ với hải trình 2N1Đ hoặc 3N2Đ bao gồm bữa ăn trọn gói và chèo kayak. Bạn có thể chọn tab "Du thuyền" để lọc chi tiết.';
   }
 
   if (matches.length && profile.city) {
     const [first, second] = matches;
-    const firstPrice = first.min_price ? ` từ ${formatPrice(first.min_price)}đ/đêm` : '';
-    const secondText = second ? ` Ngoài ra còn có ${second.name} tại ${second.city}.` : '';
-    return `Dành cho chỗ nghỉ tại ${profile.city}, mình gợi ý ${first.name}${firstPrice}.${secondText} Chọn thẻ bên dưới để xem phòng trống!`;
+    const firstPrice = first.min_price ? ` từ **${formatPrice(first.min_price)}đ/đêm**` : '';
+    const secondText = second ? `\n• **${second.name}** tại ${second.city}` : '';
+    return `🏨 **Dành cho chuyến đi ${profile.city}:**\n• **${first.name}**${firstPrice}${secondText}\n\nBấm thẻ bên dưới để xem phòng trống!`;
   }
 
   if (articleMatches.length) {
     const article = articleMatches[0];
-    return `Kinh nghiệm du lịch từ Dibaoxa: "${article.title}" - ${article.advice}. Bạn có thể vào mục "Blog" để đọc đầy đủ các bài viết bổ ích!`;
+    return `💡 **Góc kinh nghiệm du lịch Dibaoxa:**\n\n*"${article.title}"*\n👉 ${article.advice}\n\nBạn có thể đọc thêm các bài viết hay tại mục **Blog**!`;
   }
 
-  return 'Mình luôn sẵn sàng tư vấn tất cả dịch vụ của Dibaoxa: Du thuyền Hạ Long/Lan Hạ, Vé máy bay nội địa, Khách sạn & Resort, Gói ưu đãi và Kinh nghiệm du lịch. Bạn hãy cho mình biết điểm đến hoặc khoảng ngân sách nhé!';
+  return '🌟 Mình luôn sẵn sàng tư vấn tất cả dịch vụ trên Dibaoxa:\n• ⚓ **Du thuyền** Hạ Long & Lan Hạ 4-5 sao\n• ✈️ **Vé máy bay** nội địa giá rẻ\n• 🏨 **Khách sạn & Resort** nghỉ dưỡng\n• 🎁 **Gói combo** trọn gói tiết kiệm\n\nBạn hãy cho mình biết điểm đến hoặc ngân sách dự kiến nhé!';
 }
 
 /* ────────────────────── DYNAMIC SUGGESTIONS ────────────────────── */
@@ -361,12 +378,11 @@ function buildDynamicSuggestions(profile, cruiseMatches, flightMatches, matches)
   } else if (profile.intents.includes('flight') || flightMatches.length) {
     suggestions.push('Bay SGN đi DAD giá rẻ nhất?', 'Sân bay nào ở miền Trung?', 'Hãng nào được hoàn vé?');
   } else if (profile.intents.includes('hotel') || profile.intents.includes('room') || matches.length) {
-    suggestions.push('Phòng nào rẻ nhất ở Đà Nẵng?', 'Khách sạn gần biển có bể bơi', 'Resort cho gia đình');
+    suggestions.push('Phòng nào rộng nhất cho gia đình?', 'Khách sạn gần biển có bể bơi', 'Resort 5 sao giá tốt');
   } else if (profile.intents.includes('package')) {
     suggestions.push('Gói combo dưới 5 triệu?', 'Combo du thuyền + khách sạn', 'Gói ưu đãi Phú Quốc');
   }
 
-  // Fill remaining slots with defaults
   const defaults = [
     'Du thuyền Hạ Long 2 ngày 1 đêm',
     'Vé máy bay Hà Nội đi Đà Nẵng',
@@ -390,18 +406,18 @@ function buildComprehensiveInventoryContext(hotels, packages, cruises) {
       hotline: '1900 8899',
       hotline_hours: '8:00 - 21:00 hàng ngày',
       features: [
-        'Giữ chỗ 10 phút trước khi thanh toán',
-        'Thanh toán qua VietQR & VNPay',
-        'Mã QR Check-in tự động sau thanh toán',
+        'Giữ chỗ 10 phút miễn phí trước khi thanh toán',
+        'Thanh toán qua mã VietQR & cổng VNPay',
+        'Mã QR Check-in tự động xuất hiện sau thanh toán',
         'Tích điểm thưởng Xu thành viên (1 Xu = 10.000đ chi tiêu)',
-        'Hạng thành viên: Silver → Gold → Platinum',
+        'Hạng thành viên nâng cấp tự động: Silver → Gold → Platinum',
       ],
-      categories: ['Du thuyền', 'Vé máy bay', 'Khách sạn & Resort', 'Gói combo ưu đãi', 'Du lịch doanh nghiệp MICE', 'Blog kinh nghiệm'],
+      categories: ['Du thuyền 4-5 sao', 'Vé máy bay nội địa', 'Khách sạn & Resort', 'Gói combo trọn gói', 'Du lịch doanh nghiệp MICE', 'Blog kinh nghiệm'],
       booking_process: [
-        'Chọn sản phẩm (du thuyền/vé bay/khách sạn/gói combo)',
-        'Điền thông tin hành khách/khách lưu trú',
-        'Giữ chỗ 10 phút, thanh toán qua VietQR hoặc VNPay',
-        'Nhận mã đặt chỗ + QR check-in trong mục "Đơn của tôi"',
+        'Bước 1: Chọn sản phẩm (du thuyền/vé bay/khách sạn/gói combo)',
+        'Bước 2: Điền thông tin hành khách/khách lưu trú',
+        'Bước 3: Giữ chỗ 10 phút, quét mã VietQR hoặc thanh toán VNPay',
+        'Bước 4: Nhận mã đặt chỗ + QR check-in trong mục "Đơn của tôi"',
       ],
     },
     cruises: cruises.map((c) => ({
@@ -491,55 +507,27 @@ function buildComprehensiveInventoryContext(hotels, packages, cruises) {
   });
 }
 
-/* ────────────────────── SYSTEM PROMPT ────────────────────── */
+/* ────────────────────── ADVANCED SYSTEM PROMPT ────────────────────── */
 
 function buildSystemPrompt() {
   return [
-    'Bạn là Vi, trợ lý AI thông minh của nền tảng du lịch Dibaoxa. Bạn am hiểu toàn bộ dữ liệu sản phẩm và dịch vụ của Dibaoxa.',
+    'Bạn là Vi - Trợ lý Tư vấn Du lịch Thông minh & Cao cấp của nền tảng Dibaoxa.',
+    'Bạn đóng vai trò là một chuyên viên tư vấn du lịch tận tâm, sắc bén, am hiểu sâu sắc mọi dữ liệu sản phẩm, dịch vụ và chính sách của Dibaoxa.',
     '',
-    '## NGUYÊN TẮC CỐT LÕI:',
-    '1. CHỈ trả lời dựa trên dữ liệu được cung cấp trong "Dữ liệu kiến thức Dibaoxa". TUYỆT ĐỐI KHÔNG bịa thêm thông tin.',
-    '2. Nếu không tìm thấy thông tin trong dữ liệu, nói rõ: "Thông tin này mình chưa có trong hệ thống, bạn có thể gọi Hotline 1900 8899 để được tư vấn chi tiết."',
-    '3. Luôn trích dẫn tên sản phẩm, giá, và thông số cụ thể khi trả lời.',
+    '## NGUYÊN TẮC VÀ PHONG CÁCH TƯ VẤN:',
+    '1. **Nắm bắt bối cảnh đa lượt (Multi-turn Awareness)**: Ghi nhớ các chi tiết khách đã đề cập trước đó (điểm đến, số người lớn/trẻ em, khoảng ngân sách, sở thích...) để đưa ra câu trả lời nối tiếp logic và cá nhân hóa.',
+    '2. **Lý giải nguyên nhân (Personalized Reasoning)**: Luôn giải thích TẠI SAO một lựa chọn lại phù hợp với yêu cầu của khách (ví dụ: giải thích tại sao phòng khách sạn hoặc du thuyền này phù hợp cho gia đình có trẻ em, cặp đôi, hoặc nhóm bạn).',
+    '3. **Tính toán chi phí thông minh (Cost Estimation)**: Nếu khách nêu số khách hoặc số đêm, hãy tự động tính tổng chi phí ước tính (Ví dụ: 2 vé máy bay x 1.890.000đ + 2 đêm khách sạn 2.000.000đ = tổng 7.780.000đ).',
+    '4. **Tổ hợp Combo linh hoạt**: Khi khách hỏi lịch trình hoặc gợi ý chuyến đi, chủ động đề xuất kết hợp Vé máy bay + Khách sạn hoặc Du thuyền để tạo thành chuyến đi hoàn chỉnh.',
+    '5. **Căn cứ dữ liệu tuyệt đối (Zero Hallucination)**: CHỈ trích dẫn chính xác thông tin (tên, giá, điểm đến, giờ bay, tiện ích, loại phòng, chính sách) có trong "Dữ liệu kiến thức Dibaoxa". Nếu dữ liệu chưa có, hãy lịch sự thông báo và hướng dẫn khách gọi Hotline 1900 8899.',
+    '6. **Trình bày trực quan & Sang trọng**: Sử dụng định dạng Markdown đẹp mắt với emoji phù hợp, in đậm tên sản phẩm/con số, dùng danh sách gạch đầu dòng để khách dễ đọc trên di động.',
     '',
-    '## CÁCH XỬ LÝ TỪNG LOẠI CÂU HỎI:',
-    '',
-    '### Câu hỏi về Du thuyền:',
-    '- Nêu tên du thuyền, hãng vận hành, điểm đến, cảng khởi hành, thời lượng, giá/khách, đánh giá.',
-    '- Liệt kê tiện ích (features), hành trình (itinerary), loại cabin nếu được hỏi.',
-    '- Trả lời chính sách (policies) và FAQ nếu có trong dữ liệu.',
-    '',
-    '### Câu hỏi về Khách sạn & Resort:',
-    '- Nêu tên, thành phố, địa chỉ, số sao, giá phòng rẻ nhất, đánh giá.',
-    '- Liệt kê các loại phòng (tên phòng, giá/đêm, sức chứa, diện tích, view, loại giường) nếu được hỏi.',
-    '- Nêu tiện nghi (amenities), điểm nổi bật (highlights), chính sách nếu được hỏi.',
-    '',
-    '### Câu hỏi về Vé máy bay:',
-    '- Nêu mã chuyến bay, hãng bay, điểm đi/đến (kèm tên thành phố), giờ bay, giá, hành lý, máy bay.',
-    '- So sánh các chuyến bay nếu được yêu cầu.',
-    '- Nêu thông tin sân bay (mã IATA, tên, thành phố, vùng miền) nếu được hỏi.',
-    '',
-    '### Câu hỏi so sánh:',
-    '- So sánh theo bảng: tên, giá, đánh giá, tiện ích, thời lượng.',
-    '- Nêu rõ ưu/nhược điểm từng lựa chọn.',
-    '',
-    '### Câu hỏi về Giá & Ngân sách:',
-    '- Lọc sản phẩm phù hợp ngân sách, sắp xếp từ rẻ đến đắt.',
-    '- Nêu rõ giá gốc, đơn vị (VND/khách, VND/đêm...).',
-    '',
-    '### Câu hỏi về Gói combo:',
-    '- Nêu tên gói, điểm đến, thời lượng, giá, và danh sách dịch vụ bao gồm.',
-    '',
-    '### Câu hỏi về Thanh toán & Đặt chỗ:',
-    '- Giải thích quy trình đặt chỗ 4 bước: Chọn → Điền thông tin → Thanh toán VietQR/VNPay → Nhận mã QR.',
-    '- Thời gian giữ chỗ: 10 phút. Tích điểm Xu: 1 Xu = 10.000đ.',
-    '',
-    '## PHONG CÁCH TRẢ LỜI:',
-    '- Thân thiện, chuyên nghiệp, gọi khách là "bạn".',
-    '- Ưu tiên trả lời trực tiếp, đi thẳng vào kết luận rồi mở rộng chi tiết.',
-    '- Độ dài: 2-5 câu cho câu hỏi đơn giản, có thể dài hơn khi so sánh hoặc liệt kê.',
-    '- Luôn kết thúc bằng gợi ý hành động (xem tab, chọn sản phẩm, gọi hotline...).',
-    '- Sử dụng format đẹp: bullet points cho danh sách, in đậm cho tên sản phẩm.',
+    '## HƯỚNG DẪN XỬ LÝ THEO CHỦ ĐỀ:',
+    '- **Du thuyền**: Nêu tên du thuyền, hãng vận hành, điểm đến, cảng khởi hành, thời lượng, giá/khách, điểm đánh giá, danh sách tiện ích (Features), loại cabin và điểm nhấn hành trình (Itinerary).',
+    '- **Khách sạn & Resort**: Nêu tên, thành phố, địa chỉ, số sao, giá phòng rẻ nhất, đánh giá. Liệt kê tên các hạng phòng kèm sức chứa `max_occupancy`, diện tích `area_sqm`, view và giá/đêm khi được hỏi.',
+    '- **Vé máy bay**: Nêu mã chuyến bay, hãng bay, hành trình (điểm đi → điểm đến), giờ cất/hạ cánh, giá vé, hành lý ký gửi/xách tay, loại máy bay, số ghế còn lại.',
+    '- **So sánh**: Lập bảng hoặc danh sách so sánh chi tiết ưu/nhược điểm, mức giá, tiện ích và đối tượng phù hợp giữa 2-3 lựa chọn.',
+    '- **Thanh toán & Thủ tục**: Hướng dẫn giữ chỗ 10 phút, thanh toán VietQR/VNPay, mã QR Check-in tự động và chương trình tích Xu thành viên.',
   ].join('\n');
 }
 
@@ -567,17 +555,27 @@ export function buildOpenAiRequestBody({ message, history, hotels, packages, cru
     ? `Ý định phát hiện: ${profile.intents.join(', ')}`
     : 'Chưa xác định ý định cụ thể';
 
+  const contextSummary = [
+    `Ý định: ${detectedIntents}`,
+    `Thành phố: ${profile.city || 'Chưa nêu'}`,
+    `Ngân sách: ${profile.budget ? formatPrice(profile.budget) + 'đ' : 'Chưa nêu'}`,
+    `Số đêm: ${profile.nights || 'Chưa nêu'}`,
+    `Số khách: ${profile.guests || 'Chưa nêu'}`,
+    `Đối tượng: ${profile.isFamily ? 'Gia đình' : profile.isCouple ? 'Cặp đôi' : 'Thường'}`,
+    `Hạng mong muốn: ${profile.isLuxury ? 'Cao cấp 5 sao' : 'Tự do'}`,
+  ].join(' | ');
+
   return {
     model: ENV.OPENAI_MODEL,
     instructions: buildSystemPrompt(),
     input: [
-      `=== DỮ LIỆU KIẾN THỨC DIBAOXA (Toàn bộ sản phẩm & dịch vụ) ===\n${buildComprehensiveInventoryContext(hotels, packages, cruises)}`,
-      `=== PHÂN TÍCH NHU CẦU KHÁCH ===\n${detectedIntents}\nThành phố: ${profile.city || 'Chưa xác định'}\nNgân sách: ${profile.budget ? formatPrice(profile.budget) + 'đ' : 'Chưa nêu'}\nSố đêm: ${profile.nights || 'Chưa nêu'}\nSố khách: ${profile.guests || 'Chưa nêu'}`,
-      priorMessages ? `=== LỊCH SỬ TRÒ CHUYỆN ===\n${priorMessages}` : '',
-      `=== CÂU HỎI HIỆN TẠI ===\n${message}`,
+      `=== DỮ LIỆU KIẾN THỨC DIBAOXA ===\n${buildComprehensiveInventoryContext(hotels, packages, cruises)}`,
+      `=== BỐI CẢNH NGHỆ THUẬT VÀ NHU CẦU KHÁCH ===\n${contextSummary}`,
+      priorMessages ? `=== LỊCH SỬ TRÒ CHUYỆN ĐA LƯỢT ===\n${priorMessages}` : '',
+      `=== CÂU HỎI MỚI NHẤT CỦA KHÁCH ===\n${message}`,
     ].filter(Boolean).join('\n\n'),
     reasoning: { effort: 'medium' },
-    max_output_tokens: 800,
+    max_output_tokens: 1200,
     ...(safetyIdentifier && { safety_identifier: safetyIdentifier }),
     store: false,
   };
@@ -593,7 +591,7 @@ async function generateAiAnswer({ message, history, hotels, packages, cruises, p
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(buildOpenAiRequestBody({ message, history, hotels, packages, cruises, profile, safetyIdentifier })),
-    signal: AbortSignal.timeout(18_000),
+    signal: AbortSignal.timeout(20_000),
   });
 
   if (!response.ok) {
@@ -641,7 +639,7 @@ export async function chat({ message, history = [], safetyIdentifier }) {
     listCruises().catch(() => []),
   ]);
 
-  const profile = extractTripProfile(message);
+  const profile = extractTripProfile(message, history);
   const matches = rankHotels(hotels, message, profile);
   const packageMatches = rankPackages(packages, profile);
   const cruiseMatches = rankCruises(cruises, profile);

@@ -12,6 +12,11 @@ const operations = authorizeRoles('admin', 'receptionist');
 const entityId = z.string().trim().min(1).max(120);
 const uuidParams = z.object({ id: entityId }).strict();
 const stringList = z.array(z.string().trim().min(1).max(300)).max(50);
+const departureInventory = z.object({
+  cabin_name: z.string().trim().min(1).max(120),
+  total_units: z.number().int().min(0).max(10_000),
+  price_override: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
+}).strict();
 
 const roomSchema = z.object({
   id: entityId.optional(),
@@ -33,12 +38,6 @@ const serviceSchema = z.object({
   name: z.string().trim().min(2).max(120),
   price: z.number().int().min(0).max(1_000_000_000),
   description: z.string().trim().min(1).max(1000),
-}).strict();
-
-const departureInventory = z.object({
-  cabin_name: z.string().trim().min(1).max(120),
-  total_units: z.number().int().min(0).max(10_000),
-  price_override: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
 }).strict();
 
 const hotelSchema = z.object({

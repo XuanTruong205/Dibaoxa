@@ -19,6 +19,7 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { makeCruiseAdminId, parseCruiseLines, validateCruiseAdminStep } from '../../../utils/cruiseAdminValidation';
 
 const DRAFT_KEY = 'dibaoxa_admin_cruise_draft_v2';
 const COMMON_FEATURES = ['Ban công riêng', 'Bữa ăn trọn gói', 'Chèo kayak', 'Nhà hàng', 'Quầy bar', 'Bể sục jacuzzi', 'Spa', 'Lớp nấu ăn'];
@@ -30,9 +31,8 @@ const STEPS = [
 ];
 
 const toLines = (value) => Array.isArray(value) ? value.join('\n') : (typeof value === 'string' ? value : '');
-const parseLines = (value) => value.split('\n').map((item) => item.trim()).filter(Boolean);
+const parseLines = parseCruiseLines;
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`;
-const makeId = (name) => `cruise-${name.toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`;
 const dateAfter = (days) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -115,7 +115,13 @@ function createInitialForm(cruise, preset, departures) {
 
   try {
     const draft = JSON.parse(window.localStorage.getItem(DRAFT_KEY) || 'null');
-    if (draft?.form) return { ...EMPTY_FORM, ...draft.form, cabins: normalizeCabins(draft.form.cabins, 4_500_000), features: normalizeFeatures(draft.form.features) };
+    if (draft?.form) return {
+      ...EMPTY_FORM,
+      ...draft.form,
+      cabins: normalizeCabins(draft.form.cabins, 4_500_000),
+      features: normalizeFeatures(draft.form.features),
+      faqs: Array.isArray(draft.form.faqs) && draft.form.faqs.length ? draft.form.faqs : [{ question: '', answer: '' }],
+    };
   } catch {
     // A broken or blocked local draft must never prevent opening the editor.
   }
@@ -196,29 +202,7 @@ export default function CruiseEditorModal({ cruise, preset, onClose, onSuccess }
     firstDraftSave.current = true;
   };
 
-  const stepError = (targetStep) => {
-    if (targetStep === 0) {
-      if (form.name.trim().length < 2) return 'Hãy nhập tên du thuyền.';
-      if (form.operator.trim().length < 2) return 'Hãy nhập đơn vị vận hành.';
-      if (form.destination.trim().length < 2 || form.departurePort.trim().length < 2) return 'Hãy hoàn thiện điểm đến và cảng khởi hành.';
-    }
-    if (targetStep === 1) {
-      if (!form.cabins.length) return 'Cần ít nhất một hạng cabin.';
-      if (form.cabins.some((cabin) => !cabin.name.trim() || Number(cabin.price) <= 0 || Number(cabin.units) < 1)) return 'Mỗi cabin cần có tên, giá và số lượng mở bán hợp lệ.';
-      const names = form.cabins.map((cabin) => cabin.name.trim().toLocaleLowerCase('vi'));
-      if (new Set(names).size !== names.length) return 'Tên các hạng cabin không được trùng nhau.';
-    }
-    if (targetStep === 2) {
-      if (!form.image.trim()) return 'Hãy nhập ảnh bìa.';
-      if (form.description.trim().length < 10) return 'Bài giới thiệu cần ít nhất 10 ký tự.';
-      if (!itinerary.length) return 'Hãy thêm ít nhất một chặng trong lịch trình.';
-    }
-    if (targetStep === 3 && !isEditing) {
-      if (!form.firstDepartureDate) return 'Hãy chọn ngày khởi hành đầu tiên.';
-      if (Number(form.departureCount) < 1 || Number(form.departureIntervalDays) < 1) return 'Số chuyến và chu kỳ khởi hành phải lớn hơn 0.';
-    }
-    return '';
-  };
+  const stepError = (targetStep) => validateCruiseAdminStep(form, targetStep, { editing: isEditing });
 
   const goNext = () => {
     const message = stepError(step);
@@ -238,7 +222,7 @@ export default function CruiseEditorModal({ cruise, preset, onClose, onSuccess }
     setError('');
     const cabins = form.cabins.map((cabin) => ({ name: cabin.name.trim(), price: Number(cabin.price), units: Number(cabin.units) }));
     const payload = {
-      id: isEditing ? cruise.id : (form.id.trim() || makeId(form.name)),
+      id: isEditing ? cruise.id : (form.id.trim() || makeCruiseAdminId(form.name)),
       name: form.name.trim(), operator: form.operator.trim(), destination: form.destination.trim(), departure_port: form.departurePort.trim(),
       duration_days: Number(form.durationDays), price: basePrice, rating: Number(form.rating), review_count: Number(form.reviews), ship_class: Number(form.shipClass),
       image: form.image.trim(), gallery_images: gallery, features: form.features, cabins: cabins.map((cabin) => cabin.name), itinerary,
@@ -258,7 +242,9 @@ export default function CruiseEditorModal({ cruise, preset, onClose, onSuccess }
       onSuccess?.(result);
       onClose();
     } catch (submitError) {
-      setError(submitError.message || 'Không thể lưu du thuyền.');
+      const firstIssue = submitError.details?.[0];
+      const fieldPath = firstIssue?.path?.join('.');
+      setError(firstIssue ? `Trường ${fieldPath}: ${firstIssue.message}` : (submitError.message || 'Không thể lưu du thuyền.'));
     } finally {
       setSaving(false);
     }

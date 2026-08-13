@@ -27,6 +27,7 @@ api.interceptors.response.use(
     const apiError = new Error(message);
     apiError.status = error.response?.status || 0;
     apiError.code = error.response?.data?.code || 'NETWORK_ERROR';
+    apiError.details = error.response?.data?.errors || [];
     return Promise.reject(apiError);
   }
 );

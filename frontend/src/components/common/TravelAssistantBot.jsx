@@ -28,6 +28,26 @@ function formatPrice(value) {
   return Number(value || 0).toLocaleString('vi-VN');
 }
 
+function renderFormattedContent(text = '') {
+  const lines = String(text || '').split('\n');
+  return lines.map((line, i) => {
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    const formattedLine = parts.map((part, j) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={j}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    return (
+      <React.Fragment key={i}>
+        {formattedLine}
+        {i < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
+}
+
 function ModeBadge({ status, mode }) {
   const degraded = status?.ai_enabled && mode === 'local';
   const aiReady = mode === 'ai';
@@ -170,7 +190,7 @@ export default function TravelAssistantBot({ onExploreDestination }) {
               {messages.map((message) => (
                 <div className={`assistant-message assistant-message--${message.role}`} key={message.id}>
                   {message.role === 'assistant' && <Sparkles aria-hidden="true" />}
-                  <p>{message.content}</p>
+                  <div className="assistant-message__text">{renderFormattedContent(message.content)}</div>
                 </div>
               ))}
               {loading && (

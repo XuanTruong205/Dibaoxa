@@ -5398,7 +5398,8 @@ button.brand-lockup {
   flex: 0 0 auto;
 }
 
-.assistant-message p {
+.assistant-message p,
+.assistant-message__text {
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--surface-muted);
@@ -5411,7 +5412,8 @@ button.brand-lockup {
   align-self: flex-end;
 }
 
-.assistant-message--user p {
+.assistant-message--user p,
+.assistant-message--user .assistant-message__text {
   background: var(--accent);
   color: var(--accent-contrast);
 }
