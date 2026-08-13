@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { serializeAmbassadorCruise } from './ambassador-cruise.js';
 
 const prisma = new PrismaClient();
 
@@ -33,8 +34,9 @@ const cruiseFixtures = [
   description: `${cruise.name} mang đến hành trình nghỉ dưỡng giàu trải nghiệm tại ${cruise.destination}, với cabin tiện nghi, ẩm thực chọn lọc và lịch trình được Dibaoxa xác nhận rõ ràng.`,
   policies: toJson(['Giá bao gồm cabin, bữa ăn và hoạt động trong lịch trình', 'Lịch trình có thể điều chỉnh theo thời tiết', 'Điều kiện hoàn hủy áp dụng theo hạng giá']),
   faqs: toJson([{ question: 'Tôi cần có mặt tại bến trước bao lâu?', answer: 'Bạn nên có mặt trước giờ đón khoảng 30 phút.' }]),
+  specifications: toJson({}),
   status: 'active',
-}));
+})).concat(serializeAmbassadorCruise());
 
 function getDemoPassword() {
   const configuredPassword = process.env.DEMO_PASSWORD?.trim();

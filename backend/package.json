@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
+    "prisma:seed:ambassador": "node prisma/upsert-ambassador.js",
     "test": "vitest run --testTimeout=20000 --fileParallelism=false"
   },
   "dependencies": {

@@ -35,6 +35,12 @@ const serviceSchema = z.object({
   description: z.string().trim().min(1).max(1000),
 }).strict();
 
+const departureInventory = z.object({
+  cabin_name: z.string().trim().min(1).max(120),
+  total_units: z.number().int().min(0).max(10_000),
+  price_override: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
+}).strict();
+
 const hotelSchema = z.object({
   name: z.string().trim().min(2).max(160),
   city: z.string().trim().min(2).max(100),
@@ -78,15 +84,38 @@ const cruiseSchema = z.object({
     question: z.string().trim().min(3).max(300),
     answer: z.string().trim().min(3).max(2000),
   }).strict()).max(30).default([]),
+  specifications: z.object({
+    launchedYear: z.number().int().min(1900).max(2100).nullable().optional(),
+    cabinCount: z.number().int().min(1).max(10_000).nullable().optional(),
+    hullMaterial: z.string().trim().max(120).optional(),
+    route: z.string().trim().max(500).optional(),
+  }).strict().default({}),
   status: z.enum(['active', 'inactive']).default('active'),
   launch_schedule: z.object({
     first_departure_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     departure_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('11:30'),
     departure_count: z.number().int().min(1).max(52).default(4),
     interval_days: z.number().int().min(1).max(90).default(7),
-    units_per_cabin: z.number().int().min(1).max(10_000).default(8),
-  }).strict().optional(),
-}).strict();
+    units_per_cabin: z.number().int().min(1).max(10_000).optional(),
+    cabin_inventory: z.array(departureInventory).min(1).max(100).optional(),
+  }).strict().refine((value) => value.units_per_cabin || value.cabin_inventory?.length, {
+    message: 'Cần số cabin mặc định hoặc cấu hình tồn kho theo từng cabin',
+  }).optional(),
+}).strict().superRefine((value, context) => {
+  const inventory = value.launch_schedule?.cabin_inventory;
+  if (!inventory?.length) return;
+
+  const cabinNames = new Set(value.cabins);
+  const inventoryNames = inventory.map((item) => item.cabin_name);
+  if (new Set(inventoryNames).size !== inventoryNames.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['launch_schedule', 'cabin_inventory'], message: 'Tên cabin mở bán không được trùng nhau' });
+  }
+  inventoryNames.forEach((name, index) => {
+    if (!cabinNames.has(name)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['launch_schedule', 'cabin_inventory', index, 'cabin_name'], message: 'Cabin mở bán phải nằm trong danh sách cabin của du thuyền' });
+    }
+  });
+});
 
 const listQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -157,7 +186,6 @@ const reportQuery = z.object({
   message: 'Phải truyền đồng thời check_in và check_out',
 });
 
-const departureInventory = z.object({ cabin_name: z.string().trim().min(1).max(120), total_units: z.number().int().min(0).max(10_000), price_override: z.number().int().min(0).max(1_000_000_000).nullable().optional() }).strict();
 const departureSchema = z.object({
   cruise_id: entityId,
   departure_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

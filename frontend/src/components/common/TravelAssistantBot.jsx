@@ -1,11 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  Bot,
+  Anchor,
   Compass,
   Hotel,
-  MapPin,
-  MessageCircle,
   PackageCheck,
+  Plane,
   Send,
   Sparkles,
   X,
@@ -47,6 +46,8 @@ export default function TravelAssistantBot({ onExploreDestination }) {
   const [suggestions, setSuggestions] = useState(INITIAL_SUGGESTIONS);
   const [matches, setMatches] = useState([]);
   const [packageMatches, setPackageMatches] = useState([]);
+  const [cruiseMatches, setCruiseMatches] = useState([]);
+  const [flightMatches, setFlightMatches] = useState([]);
   const [status, setStatus] = useState(null);
   const [mode, setMode] = useState('local');
   const [input, setInput] = useState('');
@@ -98,7 +99,7 @@ export default function TravelAssistantBot({ onExploreDestination }) {
     const trimmed = content.trim();
     if (!trimmed || loading) return;
     const userMessage = { id: `user-${Date.now()}`, role: 'user', content: trimmed };
-    const priorMessages = messages.slice(-6).map(({ role, content: historyContent }) => ({ role, content: historyContent }));
+    const priorMessages = messages.slice(-8).map(({ role, content: historyContent }) => ({ role, content: historyContent }));
     setMessages((current) => [...current, userMessage]);
     setInput('');
     setError('');
@@ -115,6 +116,8 @@ export default function TravelAssistantBot({ onExploreDestination }) {
       setSuggestions(Array.isArray(data.suggestions) ? data.suggestions.slice(0, 4) : INITIAL_SUGGESTIONS);
       setMatches(Array.isArray(data.matches) ? data.matches.slice(0, 3) : []);
       setPackageMatches(Array.isArray(data.package_matches) ? data.package_matches.slice(0, 2) : []);
+      setCruiseMatches(Array.isArray(data.cruise_matches) ? data.cruise_matches.slice(0, 3) : []);
+      setFlightMatches(Array.isArray(data.flight_matches) ? data.flight_matches.slice(0, 3) : []);
       setMode(data.mode || 'local');
     } catch {
       setError('Vi chưa kết nối được lúc này. Bạn thử gửi lại sau một chút nhé.');
@@ -132,6 +135,8 @@ export default function TravelAssistantBot({ onExploreDestination }) {
     onExploreDestination(city);
     setIsOpen(false);
   };
+
+  const hasResults = matches.length > 0 || packageMatches.length > 0 || cruiseMatches.length > 0 || flightMatches.length > 0;
 
   return (
     <div className="travel-assistant">
@@ -175,7 +180,7 @@ export default function TravelAssistantBot({ onExploreDestination }) {
               )}
               {error && <p className="travel-assistant__error" role="alert">{error}</p>}
 
-              {(matches.length > 0 || packageMatches.length > 0) && !loading && (
+              {hasResults && !loading && (
                 <div className="travel-assistant__results" aria-label="Gợi ý từ Vi">
                   {matches.map((match) => (
                     <button type="button" key={match.id} onClick={() => exploreMatch(match.city)} className="travel-assistant__result-card">
@@ -187,6 +192,28 @@ export default function TravelAssistantBot({ onExploreDestination }) {
                       </span>
                       <b>Khám phá</b>
                     </button>
+                  ))}
+
+                  {cruiseMatches.map((cruise) => (
+                    <div className="travel-assistant__cruise-card" key={cruise.id}>
+                      <Anchor />
+                      <span>
+                        <strong>{cruise.name}</strong>
+                        <small>{cruise.destination} · {cruise.durationDays} ngày · ★ {cruise.rating}</small>
+                      </span>
+                      <b>{formatPrice(cruise.price)}đ</b>
+                    </div>
+                  ))}
+
+                  {flightMatches.slice(0, 2).map((flight) => (
+                    <div className="travel-assistant__flight-card" key={flight.id}>
+                      <Plane />
+                      <span>
+                        <strong>{flight.code} · {flight.airline}</strong>
+                        <small>{flight.origin} → {flight.destination} · {flight.depart} - {flight.arrive}</small>
+                      </span>
+                      <b>{formatPrice(flight.price)}đ</b>
+                    </div>
                   ))}
 
                   {packageMatches.map((item) => (

@@ -5,10 +5,12 @@ import app from '../src/app.js';
 import { prisma } from '../src/config/db.js';
 import { addRoom, createHotel, updateHotel } from '../src/services/adminService.js';
 import { createCruise } from '../src/services/cruiseService.js';
+import { ambassadorCruiseFixture, serializeAmbassadorCruise } from '../prisma/ambassador-cruise.js';
 
 const fixture = {
   cruiseId: `hidden-cruise-${randomUUID()}`,
   scheduledCruiseId: `scheduled-cruise-${randomUUID()}`,
+  ambassadorSpecId: `ambassador-spec-${randomUUID()}`,
   hotelIds: [],
 };
 
@@ -53,7 +55,7 @@ function hotelInput(name) {
 
 describe.sequential('admin content synchronization', () => {
   afterAll(async () => {
-    await prisma.cruise.deleteMany({ where: { id: { in: [fixture.cruiseId, fixture.scheduledCruiseId] } } });
+    await prisma.cruise.deleteMany({ where: { id: { in: [fixture.cruiseId, fixture.scheduledCruiseId, fixture.ambassadorSpecId] } } });
     await prisma.hotel.deleteMany({ where: { id: { in: fixture.hotelIds } } });
   });
 
@@ -106,16 +108,35 @@ describe.sequential('admin content synchronization', () => {
         departure_time: '11:30',
         departure_count: 3,
         interval_days: 7,
-        units_per_cabin: 6,
+        cabin_inventory: [
+          { cabin_name: 'Deluxe', total_units: 8, price_override: 4_500_000 },
+          { cabin_name: 'Suite', total_units: 3, price_override: 6_200_000 },
+        ],
       },
     });
 
     const departures = await prisma.cruiseDeparture.findMany({ where: { cruise_id: fixture.scheduledCruiseId }, orderBy: { departure_date: 'asc' } });
     expect(departures.map((item) => item.departure_date)).toEqual(['2099-07-01', '2099-07-08', '2099-07-15']);
     expect(JSON.parse(departures[0].inventory)).toEqual([
-      { cabin_name: 'Deluxe', total_units: 6, price_override: null },
-      { cabin_name: 'Suite', total_units: 6, price_override: null },
+      { cabin_name: 'Deluxe', total_units: 8, price_override: 4_500_000 },
+      { cabin_name: 'Suite', total_units: 3, price_override: 6_200_000 },
     ]);
+  });
+
+  it('preserves editable cruise specifications and the complete Ambassador gallery', async () => {
+    const serialized = serializeAmbassadorCruise();
+    const id = fixture.ambassadorSpecId;
+    await prisma.cruise.create({ data: { ...serialized, id, name: `${serialized.name} test` } });
+
+    const response = await request(app).get(`/api/v1/cruises/${id}`);
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      name: `${serialized.name} test`,
+      price: 3_850_000,
+      specifications: ambassadorCruiseFixture.specifications,
+    });
+    expect(response.body.data.galleryImages).toHaveLength(19);
+    expect(response.body.data.cabins).toEqual(ambassadorCruiseFixture.cabins);
   });
 
   it('never exposes an inactive cruise through the public catalog or detail API', async () => {

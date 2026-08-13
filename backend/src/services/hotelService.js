@@ -143,11 +143,15 @@ export async function searchHotels(query) {
       rooms: undefined,
       reviews: undefined,
       stay_types: deriveStayTypes(hotel, rooms),
-      room_preview: rooms.slice(0, 3).map((room) => ({
+      room_preview: rooms.map((room) => ({
         id: room.id,
         name: room.name,
         room_type: room.room_type,
         max_occupancy: room.max_occupancy,
+        price_per_night: room.price_per_night,
+        bed_type: room.bed_type,
+        area_sqm: room.area_sqm,
+        view_type: room.view_type,
       })),
       min_price: sellableRooms.length ? Math.min(...sellableRooms.map((room) => room.price_per_night)) : null,
       avg_rating: avgRating === null ? null : Number(avgRating.toFixed(1)),

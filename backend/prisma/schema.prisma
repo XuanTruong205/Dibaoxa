@@ -182,6 +182,7 @@ model Cruise {
   description     String
   policies        String   @default("[]")
   faqs            String   @default("[]")
+  specifications  String   @default("{}")
   status          String   @default("active")
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt

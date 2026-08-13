@@ -5458,7 +5458,9 @@ button.brand-lockup {
 }
 
 .travel-assistant__result-card,
-.travel-assistant__package-card {
+.travel-assistant__package-card,
+.travel-assistant__cruise-card,
+.travel-assistant__flight-card {
   width: 100%;
   min-height: 64px;
   padding: 10px;
@@ -5479,14 +5481,18 @@ button.brand-lockup {
 }
 
 .travel-assistant__result-card > svg,
-.travel-assistant__package-card > svg {
+.travel-assistant__package-card > svg,
+.travel-assistant__cruise-card > svg,
+.travel-assistant__flight-card > svg {
   width: 17px;
   height: 17px;
   color: var(--accent);
 }
 
 .travel-assistant__result-card > span,
-.travel-assistant__package-card > span {
+.travel-assistant__package-card > span,
+.travel-assistant__cruise-card > span,
+.travel-assistant__flight-card > span {
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -5494,7 +5500,9 @@ button.brand-lockup {
 }
 
 .travel-assistant__result-card strong,
-.travel-assistant__package-card strong {
+.travel-assistant__package-card strong,
+.travel-assistant__cruise-card strong,
+.travel-assistant__flight-card strong {
   overflow: hidden;
   font-size: 0.67rem;
   text-overflow: ellipsis;
@@ -5502,7 +5510,9 @@ button.brand-lockup {
 }
 
 .travel-assistant__result-card small,
-.travel-assistant__package-card small {
+.travel-assistant__package-card small,
+.travel-assistant__cruise-card small,
+.travel-assistant__flight-card small {
   color: var(--muted);
   font-size: 0.58rem;
 }
@@ -5517,18 +5527,24 @@ button.brand-lockup {
 }
 
 .travel-assistant__result-card b,
-.travel-assistant__package-card b {
+.travel-assistant__package-card b,
+.travel-assistant__cruise-card b,
+.travel-assistant__flight-card b {
   color: var(--accent);
   font-size: 0.6rem;
   font-weight: 720;
   white-space: nowrap;
 }
 
-.travel-assistant__package-card {
+.travel-assistant__package-card,
+.travel-assistant__cruise-card,
+.travel-assistant__flight-card {
   background: color-mix(in srgb, var(--surface-muted) 68%, var(--surface));
 }
 
-.travel-assistant__package-card b {
+.travel-assistant__package-card b,
+.travel-assistant__cruise-card b,
+.travel-assistant__flight-card b {
   color: var(--text);
 }
 

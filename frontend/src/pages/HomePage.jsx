@@ -74,6 +74,7 @@ function SectionHeading({ title, description, centered = false }) {
 
 function CruiseCard({ cruise, onSelectCruise, index }) {
   const reduceMotion = useReducedMotion();
+  const specifications = cruise.specifications || {};
   return (
     <motion.article
       className="mixi-product-card"
@@ -89,7 +90,11 @@ function CruiseCard({ cruise, onSelectCruise, index }) {
         <div className="mixi-product-card__rating"><Star /><strong>{cruise.rating}</strong><span>({cruise.reviews}) đánh giá</span></div>
         <span className="mixi-product-card__location"><MapPin /> {cruise.destination}</span>
         <h3>{cruise.name}</h3>
-        <p>Hạ thủy {2020 + (index % 6)} - Tàu vỏ kim loại - {18 + index * 7} cabin</p>
+        <p>
+          {specifications.launchedYear ? `Hạ thủy ${specifications.launchedYear}` : `${cruise.durationDays} ngày ${Math.max(0, cruise.durationDays - 1)} đêm`}
+          {' · '}{specifications.hullMaterial || 'Tàu nghỉ dưỡng'}
+          {' · '}{specifications.cabinCount ? `${specifications.cabinCount} cabin` : `${cruise.cabins.length} hạng cabin`}
+        </p>
         <div className="mixi-product-card__footer">
           <div><strong>{Number(cruise.price).toLocaleString('vi-VN')} đ</strong><span>/ khách</span></div>
           <button type="button" className="btn-primary" onClick={() => onSelectCruise?.(cruise.id)}>Đặt ngay</button>

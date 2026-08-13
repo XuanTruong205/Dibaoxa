@@ -7,13 +7,13 @@ const CRUISE_PRESETS = {
   halong: {
     name: 'Du thuyền Hạ Long mới', operator: 'Dibaoxa Cruises', destination: 'Hạ Long', departurePort: 'Cảng Tuần Châu', durationDays: 2,
     price: 4500000, image: '/images/dibaoxa-cruise-hero.png', features: 'Ban công riêng\nChèo kayak\nBữa tối trên vịnh',
-    cabins: 'Deluxe Balcony\nExecutive Suite\nPresident Suite', itinerary: 'Ngày 1: Tuần Châu - Hang Sửng Sốt\nNgày 2: Đảo Titop - Tuần Châu',
+    cabins: [{ name: 'Deluxe Balcony', price: 4500000, units: 12 }, { name: 'Executive Suite', price: 5700000, units: 8 }, { name: 'President Suite', price: 8200000, units: 2 }], itinerary: 'Ngày 1: Tuần Châu - Hang Sửng Sốt\nNgày 2: Đảo Titop - Tuần Châu',
     description: 'Hành trình hai ngày một đêm khám phá Vịnh Hạ Long cùng dịch vụ nghỉ dưỡng trọn gói.', policies: 'Mang theo giấy tờ tùy thân\nCó mặt trước giờ khởi hành 45 phút',
   },
   lanha: {
     name: 'Du thuyền Lan Hạ mới', operator: 'Dibaoxa Cruises', destination: 'Lan Hạ', departurePort: 'Bến Gót, Cát Hải', durationDays: 3,
     price: 6200000, image: '/images/dibaoxa-cruise-hero.png', features: 'Kayak\nBể bơi\nLớp nấu ăn\nSpa',
-    cabins: 'Ocean Suite\nFamily Connecting\nGrand Suite', itinerary: 'Ngày 1: Cát Hải - Vịnh Lan Hạ\nNgày 2: Làng Việt Hải\nNgày 3: Hang Sáng Tối - Cát Hải',
+    cabins: [{ name: 'Ocean Suite', price: 6200000, units: 10 }, { name: 'Family Connecting', price: 7800000, units: 5 }, { name: 'Grand Suite', price: 9200000, units: 3 }], itinerary: 'Ngày 1: Cát Hải - Vịnh Lan Hạ\nNgày 2: Làng Việt Hải\nNgày 3: Hang Sáng Tối - Cát Hải',
     description: 'Hành trình ba ngày hai đêm dành cho khách muốn khám phá sâu Vịnh Lan Hạ và đảo Cát Bà.', policies: 'Mang theo giấy tờ tùy thân\nCó mặt trước giờ khởi hành 45 phút',
   },
 };
@@ -22,8 +22,10 @@ const duplicatePreset = (cruise) => ({
   name: `${cruise.name} bản sao`, operator: cruise.operator, destination: cruise.destination, departurePort: cruise.departurePort,
   durationDays: cruise.durationDays, price: cruise.price, rating: cruise.rating, reviews: 0, shipClass: cruise.shipClass,
   image: cruise.image, galleryImages: (cruise.galleryImages || []).join('\n'), features: (cruise.features || []).join('\n'),
-  cabins: (cruise.cabins || []).join('\n'), itinerary: (cruise.itinerary || []).join('\n'), description: cruise.description,
+  cabins: (cruise.cabins || []).map((name) => ({ name, price: cruise.price, units: 8 })), itinerary: (cruise.itinerary || []).join('\n'), description: cruise.description,
   policies: (cruise.policies || []).join('\n'), faqs: cruise.faqs || [], status: 'inactive',
+  launchedYear: cruise.specifications?.launchedYear || '', cabinCount: cruise.specifications?.cabinCount || '',
+  hullMaterial: cruise.specifications?.hullMaterial || 'Kim loại', route: cruise.specifications?.route || '',
 });
 
 export default function AdminCruisesView() {

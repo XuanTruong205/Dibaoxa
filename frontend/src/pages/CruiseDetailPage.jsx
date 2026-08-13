@@ -140,6 +140,7 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
   };
 
   const highlights = cruise.features.concat(['Lễ tân 24 giờ', 'Nhà hàng trên tàu']).slice(0, 8);
+  const specifications = cruise.specifications || {};
   const mapQuery = encodeURIComponent(`${cruise.departurePort}, ${cruise.destination}, Việt Nam`);
 
   return (
@@ -207,10 +208,10 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
             <aside className="product-info-card">
               <h3>Thông tin du thuyền</h3>
               <dl>
-                <div><dt>Hạ thủy</dt><dd>{2020 + (cruise.id.length % 6)}</dd></div>
-                <div><dt>Cabin</dt><dd>{18 + cruise.cabins.length * 7}</dd></div>
-                <div><dt>Thân vỏ</dt><dd>Kim loại</dd></div>
-                <div><dt>Hành trình</dt><dd>{cruise.destination}</dd></div>
+                <div><dt>Hạ thủy</dt><dd>{specifications.launchedYear || 'Đang cập nhật'}</dd></div>
+                <div><dt>Cabin</dt><dd>{specifications.cabinCount || cruise.cabins.length}</dd></div>
+                <div><dt>Thân vỏ</dt><dd>{specifications.hullMaterial || 'Kim loại'}</dd></div>
+                <div><dt>Hành trình</dt><dd>{specifications.route || cruise.destination}</dd></div>
                 <div><dt>Điều hành</dt><dd>{cruise.operator}</dd></div>
               </dl>
             </aside>
@@ -267,6 +268,15 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
           <p>Hành trình tập trung vào trải nghiệm thực tế như ngắm cảnh, chèo kayak, khám phá điểm đến và thưởng thức bữa ăn trên tàu. Đội ngũ vận hành theo sát từng chặng để chuyến đi thoải mái cho cả cặp đôi, gia đình và nhóm bạn.</p>
           {gallery[2] && <img src={gallery[2]} alt={`Không gian nghỉ dưỡng trên ${cruise.name}`} loading="lazy" />}
           <p>Dibaoxa xác nhận giờ đón, loại cabin và các yêu cầu ăn uống trước ngày khởi hành. Nếu thời tiết ảnh hưởng đến lịch trình, bạn sẽ được thông báo sớm và hỗ trợ phương án phù hợp.</p>
+          {gallery.length > 3 && (
+            <div className="product-article-gallery" aria-label={`Không gian và trải nghiệm trên ${cruise.name}`}>
+              {gallery.slice(3).map((image, index) => (
+                <button type="button" key={image} onClick={() => { setMainImage(image); setGalleryOpen(true); }} aria-label={`Xem ảnh trải nghiệm ${index + 1}`}>
+                  <img src={image} alt={`Trải nghiệm ${index + 1} trên ${cruise.name}`} loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         <section id="rules" className="product-section">

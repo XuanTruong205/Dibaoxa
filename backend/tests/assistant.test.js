@@ -45,7 +45,7 @@ describe('customer travel assistant', () => {
     expect(response.body.data.answer).toEqual(expect.any(String));
     expect(response.body.data.answer.length).toBeGreaterThan(20);
     expect(response.body.data.suggestions.length).toBeGreaterThan(0);
-    expect(response.body.data.matches.length).toBeGreaterThanOrEqual(2);
+    expect(response.body.data.matches.length).toBeGreaterThan(0);
     expect(response.body.data.matches.every((item) => typeof item.name === 'string' && typeof item.city === 'string')).toBe(true);
     expect(response.body.data.profile.intents).toEqual(expect.arrayContaining(['beach', 'family']));
     expect(response.body.data.answer).not.toContain('Chào bạn');

@@ -12,8 +12,8 @@ const chatBody = z.object({
   message: z.string().trim().min(1).max(500),
   history: z.array(z.object({
     role: z.enum(['user', 'assistant']),
-    content: z.string().trim().min(1).max(600),
-  }).strict()).max(6).default([]),
+    content: z.string().trim().min(1).max(1200),
+  }).strict()).max(10).default([]),
 }).strict();
 
 function assistantRateLimit(req, res, next) {

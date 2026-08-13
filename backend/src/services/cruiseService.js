@@ -3,6 +3,15 @@ import { prisma } from '../config/db.js';
 import { parseJsonArray } from './hotelService.js';
 import { httpError } from '../utils/httpError.js';
 
+function parseJsonObject(value) {
+  try {
+    const parsed = JSON.parse(value || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export function serializeCruise(cruise) {
   return {
     id: cruise.id,
@@ -23,6 +32,7 @@ export function serializeCruise(cruise) {
     description: cruise.description,
     policies: parseJsonArray(cruise.policies),
     faqs: parseJsonArray(cruise.faqs),
+    specifications: parseJsonObject(cruise.specifications),
     status: cruise.status,
     created_at: cruise.created_at,
     updated_at: cruise.updated_at,
@@ -49,6 +59,7 @@ function cruiseWriteData(input) {
     description: input.description,
     policies: JSON.stringify(input.policies || []),
     faqs: JSON.stringify(input.faqs || []),
+    specifications: JSON.stringify(input.specifications || {}),
     status: input.status,
   };
 }
@@ -76,11 +87,14 @@ export async function createCruise(input) {
       if (Number.isNaN(firstDate.getTime()) || firstDate.toISOString().slice(0, 10) !== createInput.launch_schedule.first_departure_date) {
         throw httpError(400, 'Ngày khởi hành đầu tiên không hợp lệ.', 'INVALID_DEPARTURE_DATE');
       }
-      const inventory = JSON.stringify(createInput.cabins.map((cabinName) => ({
-        cabin_name: cabinName,
-        total_units: createInput.launch_schedule.units_per_cabin,
-        price_override: null,
-      })));
+      const configuredInventory = createInput.launch_schedule.cabin_inventory?.length
+        ? createInput.launch_schedule.cabin_inventory
+        : createInput.cabins.map((cabinName) => ({
+          cabin_name: cabinName,
+          total_units: createInput.launch_schedule.units_per_cabin,
+          price_override: null,
+        }));
+      const inventory = JSON.stringify(configuredInventory);
       const departures = Array.from({ length: createInput.launch_schedule.departure_count }, (_, index) => {
         const date = new Date(firstDate);
         date.setUTCDate(date.getUTCDate() + index * createInput.launch_schedule.interval_days);

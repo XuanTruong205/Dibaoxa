@@ -13,6 +13,7 @@ async function startServer() {
   initSocketIO(server, ENV.CORS_ORIGIN);
 
   server.listen(ENV.PORT, () => {
+    // Nodemon reloaded for assistant updates
     console.log(`Dibaoxa API is running on http://localhost:${ENV.PORT}`);
     console.log('WebSocket server is active.');
   });
