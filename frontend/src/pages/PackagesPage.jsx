@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Compass, MapPin, Search, Sparkles, Timer } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
-import api from '../services/api';
+import { cachedGet } from '../services/api';
 
 const destinationImages = {
   'Đà Lạt': '/images/dibaoxa-dalat-retreat.webp',
@@ -19,7 +19,7 @@ export default function PackagesPage({ onExploreDestination }) {
     setLoading(true);
     setLoadError('');
     try {
-      const response = await api.get('/packages');
+      const response = await cachedGet('/packages');
       setPackages(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
       setLoadError(error.message || 'Không thể tải các gói nghỉ dưỡng lúc này.');

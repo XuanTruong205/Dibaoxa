@@ -15,7 +15,7 @@ const travelerSchema = z.object({
 const common = {
   client_request_id: z.string().uuid(),
   traveler: travelerSchema,
-  payment_method: z.literal('Demo'),
+  payment_method: z.enum(['Demo', 'VietQR']),
 };
 const createSchema = z.discriminatedUnion('product_type', [
   z.object({

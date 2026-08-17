@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "perf:check": "node scripts/check-performance-budget.mjs",
     "test": "node --test src/utils/*.test.js",
     "preview": "vite preview"
   },

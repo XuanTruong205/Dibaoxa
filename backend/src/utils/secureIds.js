@@ -13,6 +13,10 @@ export function createTransactionRef(prefix = 'PAY') {
   return `${prefix}-${randomUUID()}`;
 }
 
+export function createBankTransferRef(prefix = 'DBX') {
+  return `${prefix}${randomBytes(7).toString('hex').toUpperCase()}`;
+}
+
 export function createCheckinToken() {
   return `DIBAOXA_CHECKIN_${randomBytes(24).toString('base64url')}`;
 }

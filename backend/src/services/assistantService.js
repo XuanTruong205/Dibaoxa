@@ -551,7 +551,7 @@ export function buildOpenAiRequestBody({ message, history, hotels, packages, cru
     .map((item, i) => `[${i + 1}] ${item.role === 'user' ? 'Khách hỏi' : 'Vi trả lời'}: ${item.content}`)
     .join('\n');
 
-  const detectedIntents = profile.intents.length
+  const detectedIntents = Array.isArray(profile?.intents) && profile.intents.length
     ? `Ý định phát hiện: ${profile.intents.join(', ')}`
     : 'Chưa xác định ý định cụ thể';
 
@@ -572,9 +572,10 @@ export function buildOpenAiRequestBody({ message, history, hotels, packages, cru
       `=== DỮ LIỆU KIẾN THỨC DIBAOXA ===\n${buildComprehensiveInventoryContext(hotels, packages, cruises)}`,
       `=== BỐI CẢNH NGHỆ THUẬT VÀ NHU CẦU KHÁCH ===\n${contextSummary}`,
       priorMessages ? `=== LỊCH SỬ TRÒ CHUYỆN ĐA LƯỢT ===\n${priorMessages}` : '',
-      `=== CÂU HỎI MỚI NHẤT CỦA KHÁCH ===\n${message}`,
+      `=== CÂU HỎI MỚI NHẤT CỦA KHÁCH ===\nKhách hỏi: ${message}`,
     ].filter(Boolean).join('\n\n'),
-    reasoning: { effort: 'medium' },
+    reasoning: { effort: 'low' },
+    text: { verbosity: 'low' },
     max_output_tokens: 1200,
     ...(safetyIdentifier && { safety_identifier: safetyIdentifier }),
     store: false,

@@ -279,6 +279,21 @@ model TravelOrderPayment {
   @@map("travel_order_payments")
 }
 
+model BankWebhookEvent {
+  id                      String   @id @default(uuid())
+  provider                String
+  provider_transaction_id String
+  reference_code          String?
+  amount                  Int
+  status                  String
+  raw_payload             String
+  created_at              DateTime @default(now())
+
+  @@unique([provider, provider_transaction_id])
+  @@index([reference_code, status])
+  @@map("bank_webhook_events")
+}
+
 model TravelPackage {
   id          String   @id @default(uuid())
   title       String

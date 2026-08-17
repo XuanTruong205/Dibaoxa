@@ -1,5 +1,9 @@
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 dotenv.config();
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: fileURLToPath(new URL('../../.env.local', import.meta.url)), override: true });
+}
 
 const isProduction = process.env.NODE_ENV === 'production';
 const configuredJwtSecret = process.env.JWT_SECRET;
@@ -21,6 +25,10 @@ export const ENV = {
   CORS_ORIGINS: configuredCorsOrigins,
   PAYMENT_MODE: process.env.PAYMENT_MODE || 'demo',
   VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET || '',
+  VIETQR_BANK_ID: process.env.VIETQR_BANK_ID || '',
+  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '',
+  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || '',
+  SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY || '',
   REDIS_URL: process.env.REDIS_URL || '',
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
   OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-5.6',

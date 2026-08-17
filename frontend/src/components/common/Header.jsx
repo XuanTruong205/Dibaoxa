@@ -18,7 +18,6 @@ import {
   User as UserIcon,
   X,
 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -30,12 +29,11 @@ const MAIN_LINKS = [
   { tab: 'blog', label: 'Blog', Icon: Newspaper },
 ];
 
-export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }) {
+export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, onPrefetch }) {
   const { user, isAuthenticated, logout } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const accountMenuRef = useRef(null);
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -92,6 +90,8 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }
               type="button"
               key={tab}
               onClick={() => navigate(tab)}
+              onPointerEnter={() => onPrefetch?.(tab)}
+              onFocus={() => onPrefetch?.(tab)}
               className={`nav-link ${isActive(tab) ? 'is-active' : ''}`}
               aria-current={isActive(tab) ? 'page' : undefined}
             >
@@ -112,18 +112,7 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }
             aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
             title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={theme}
-                className="theme-icon"
-                initial={reduceMotion ? false : { opacity: 0, rotate: -24, scale: 0.8 }}
-                animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={reduceMotion ? undefined : { opacity: 0, rotate: 24, scale: 0.8 }}
-                transition={{ duration: 0.18 }}
-              >
-                {theme === 'dark' ? <Sun /> : <Moon />}
-              </motion.span>
-            </AnimatePresence>
+            <span key={theme} className="theme-icon">{theme === 'dark' ? <Sun /> : <Moon />}</span>
           </button>
 
           {isAuthenticated && user ? (
@@ -132,18 +121,16 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }
                 <span className="account-copy"><span>{user.full_name}</span><small><Award /> {user.reward_points ? user.reward_points.toLocaleString('vi-VN') : 0} Xu</small></span>
                 <span className="account-avatar" aria-hidden="true">{user.full_name?.charAt(0) || 'U'}</span>
               </button>
-              <AnimatePresence>
                 {dropdownOpen && (
-                  <motion.div className="account-dropdown" role="menu" initial={reduceMotion ? false : { opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6, scale: 0.985 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+                  <div className="account-dropdown" role="menu">
                     <div className="account-dropdown__meta"><span>{getVipBadge(user.vip_tier)}</span><p>{user.email}</p></div>
                     <button type="button" onClick={() => navigate('my-bookings')} role="menuitem"><Ticket />Đơn và lịch trình</button>
                     <button type="button" onClick={() => navigate('packages')} role="menuitem"><Sparkles />Gói ưu đãi</button>
                     <button type="button" onClick={() => navigate('profile')} role="menuitem"><CircleUserRound />Hồ sơ và điểm thưởng</button>
                     {(user.role === 'admin' || user.role === 'receptionist') && <button type="button" onClick={() => navigate('admin')} role="menuitem"><ShieldCheck />Quản trị và QR Scan</button>}
                     <button type="button" onClick={() => { logout(); setDropdownOpen(false); }} className="account-dropdown__danger" role="menuitem"><LogOut />Đăng xuất</button>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
           ) : (
             <button type="button" onClick={() => navigate('login')} className="icon-button header-login" aria-label="Đăng nhập" title="Đăng nhập"><UserIcon /></button>
@@ -155,9 +142,8 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }
         </div>
       </div>
 
-      <AnimatePresence>
         {mobileOpen && (
-          <motion.nav className="mobile-nav" aria-label="Điều hướng di động" initial={reduceMotion ? false : { opacity: 0, y: -12, scaleY: 0.96 }} animate={{ opacity: 1, y: 0, scaleY: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -8, scaleY: 0.97 }} transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: 'top' }}>
+          <nav className="mobile-nav" aria-label="Điều hướng di động">
             <button type="button" onClick={() => navigate('home')} className={activeTab === 'home' ? 'is-active' : ''}><Compass />Trang chủ</button>
             {MAIN_LINKS.map(({ tab, label, Icon }) => <button type="button" key={tab} onClick={() => navigate(tab)} className={isActive(tab) ? 'is-active' : ''}><Icon />{label}</button>)}
             <button type="button" onClick={() => navigate('packages')} className={activeTab === 'packages' ? 'is-active' : ''}><Sparkles />Gói ưu đãi</button>
@@ -166,9 +152,8 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme }
             {isAuthenticated && <button type="button" onClick={() => navigate('profile')} className={activeTab === 'profile' ? 'is-active' : ''}><CircleUserRound />Hồ sơ và điểm thưởng</button>}
             {(user?.role === 'admin' || user?.role === 'receptionist') && <button type="button" onClick={() => navigate('admin')}><ShieldCheck />Quản trị lễ tân</button>}
             {!isAuthenticated && <button type="button" onClick={() => navigate('register')} className="btn-primary"><UserIcon />Đăng ký tài khoản</button>}
-          </motion.nav>
+          </nav>
         )}
-      </AnimatePresence>
     </header>
   );
 }

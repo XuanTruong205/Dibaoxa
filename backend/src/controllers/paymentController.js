@@ -31,3 +31,22 @@ export async function vnpayWebhook(req, res, next) {
     next(error);
   }
 }
+
+export async function sepayWebhook(req, res, next) {
+  try {
+    const result = await paymentService.processSepayWebhook(req.body, req.get('authorization'));
+    if (result.matched && result.kind === 'booking') emitBooked(result.data);
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function paymentStatus(req, res, next) {
+  try {
+    const data = await paymentService.getPaymentStatus(req.params.transactionRef, req.user.userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}

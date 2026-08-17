@@ -30,7 +30,7 @@ import {
   useFavoriteIds,
 } from '../components/travel/TravelSearchUI';
 import { CRUISE_DESTINATIONS } from '../data/travelCatalog';
-import api from '../services/api';
+import { cachedGet } from '../services/api';
 
 const TODAY = getDateFromToday(0);
 const PAGE_SIZE = 5;
@@ -68,7 +68,7 @@ export default function CruisesPage({ onViewPlans, onSelectCruise, onLogin, init
 
   useEffect(() => {
     let active = true;
-    api.get('/cruises')
+    cachedGet('/cruises')
       .then((response) => {
         const items = response?.data?.data;
         if (active && Array.isArray(items)) setCruises(items);

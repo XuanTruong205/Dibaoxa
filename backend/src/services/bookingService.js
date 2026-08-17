@@ -6,7 +6,8 @@ import { getVipTier } from '../config/loyalty.js';
 import { dateRangesOverlap, getTodayDateString, parseStayDates } from '../utils/dateUtils.js';
 import { httpError } from '../utils/httpError.js';
 import { withKeyedMutex } from '../utils/keyedMutex.js';
-import { createBookingCode, createCheckinToken, createHoldId, createTransactionRef } from '../utils/secureIds.js';
+import { createBankTransferRef, createBookingCode, createCheckinToken, createHoldId, createTransactionRef } from '../utils/secureIds.js';
+import { assertVietQrConfigured, buildVietQrPayment } from './vietqrService.js';
 
 const HOLD_TTL_SECONDS = 600;
 const ACTIVE_INVENTORY_STATUSES = ['confirmed', 'checked_in'];
@@ -100,6 +101,7 @@ function buildPendingBookingResponse(booking, payment, room, hotel) {
       amount: payment.amount,
       expires_at: booking.payment_expires_at,
     } : null,
+    payment_qr: buildVietQrPayment(payment, booking.payment_expires_at),
   };
 }
 
@@ -228,6 +230,7 @@ export async function confirmBooking({
   if (payment_method === 'Demo' && (ENV.PAYMENT_MODE !== 'demo' || ENV.NODE_ENV === 'production')) {
     throw httpError(400, 'Thanh toán mô phỏng không được bật trên môi trường này.', 'DEMO_PAYMENT_DISABLED');
   }
+  if (payment_method === 'VietQR') assertVietQrConfigured();
 
   const existing = await prisma.booking.findUnique({
     where: { hold_id },
@@ -310,7 +313,9 @@ export async function confirmBooking({
           amount: grandTotal,
           payment_method,
           status: 'pending',
-          transaction_ref: createTransactionRef(payment_method.toUpperCase()),
+          transaction_ref: payment_method === 'VietQR'
+            ? createBankTransferRef()
+            : createTransactionRef(payment_method.toUpperCase()),
         },
       });
       return { booking, payment };

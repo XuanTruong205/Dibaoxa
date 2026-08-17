@@ -1,11 +1,12 @@
 import { prisma } from '../config/db.js';
 import { ENV } from '../config/env.js';
 import { getVipTier } from '../config/loyalty.js';
-import { createBookingCode, createTransactionRef } from '../utils/secureIds.js';
+import { createBankTransferRef, createBookingCode, createTransactionRef } from '../utils/secureIds.js';
 import { getTodayDateString } from '../utils/dateUtils.js';
 import { httpError } from '../utils/httpError.js';
 import { verifyFlightQuoteToken } from './flightService.js';
 import { assertCruiseInventory, withCruiseDepartureLock } from './cruiseInventoryService.js';
+import { assertVietQrConfigured, buildVietQrPayment } from './vietqrService.js';
 
 const PAYMENT_WINDOW_MS = 15 * 60 * 1000;
 
@@ -18,6 +19,7 @@ function parseSnapshot(value) {
 }
 
 export function serializeTravelOrder(order) {
+  const payments = order.payments || [];
   return {
     id: order.id,
     order_code: order.order_code,
@@ -38,7 +40,8 @@ export function serializeTravelOrder(order) {
     status: order.status,
     payment_expires_at: order.payment_expires_at,
     earned_points: order.earned_points,
-    payments: order.payments || [],
+    payments,
+    payment_qr: buildVietQrPayment(payments[0], order.payment_expires_at),
     created_at: order.created_at,
     updated_at: order.updated_at,
   };
@@ -123,9 +126,10 @@ async function getExistingRequest(clientRequestId, userId) {
 }
 
 export async function createTravelOrder(userId, input) {
-  if (input.payment_method !== 'Demo' || ENV.PAYMENT_MODE !== 'demo' || ENV.NODE_ENV === 'production') {
+  if (input.payment_method === 'Demo' && (ENV.PAYMENT_MODE !== 'demo' || ENV.NODE_ENV === 'production')) {
     throw httpError(400, 'Hiện chỉ hỗ trợ thanh toán mô phỏng trong môi trường phát triển.', 'PAYMENT_METHOD_UNAVAILABLE');
   }
+  if (input.payment_method === 'VietQR') assertVietQrConfigured();
 
   const existing = await getExistingRequest(input.client_request_id, userId);
   if (existing) return { order: serializeTravelOrder(existing), already_created: true };
@@ -162,7 +166,9 @@ export async function createTravelOrder(userId, input) {
           amount: pricing.totalPrice,
           payment_method: input.payment_method,
           status: 'pending',
-          transaction_ref: createTransactionRef('TRAVEL-DEMO'),
+          transaction_ref: input.payment_method === 'VietQR'
+            ? createBankTransferRef()
+            : createTransactionRef('TRAVEL-DEMO'),
         },
       });
       return { ...order, payments: [payment] };
@@ -181,20 +187,25 @@ export async function createTravelOrder(userId, input) {
     : persistOrder();
 }
 
-export async function confirmDemoTravelOrder(orderId, userId) {
-  if (ENV.PAYMENT_MODE !== 'demo' || ENV.NODE_ENV === 'production') {
+async function settleTravelOrder({ orderId, userId, transactionRef, expectedAmount, requiredMethod }) {
+  if (requiredMethod === 'Demo' && (ENV.PAYMENT_MODE !== 'demo' || ENV.NODE_ENV === 'production')) {
     throw httpError(404, 'Thanh toán mô phỏng không khả dụng.', 'DEMO_PAYMENT_DISABLED');
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.travelOrder.findFirst({
-      where: { id: orderId, user_id: userId },
+    const order = await tx.travelOrder.findUnique({
+      where: { id: orderId },
       include: { payments: true },
     });
-    if (!order) throw httpError(404, 'Không tìm thấy đơn dịch vụ.', 'TRAVEL_ORDER_NOT_FOUND');
-    const payment = order.payments[0];
-    if (!payment || payment.payment_method !== 'Demo') {
-      throw httpError(409, 'Đơn không sử dụng thanh toán mô phỏng.', 'NOT_A_DEMO_PAYMENT');
+    if (!order || (userId && order.user_id !== userId)) throw httpError(404, 'Không tìm thấy đơn dịch vụ.', 'TRAVEL_ORDER_NOT_FOUND');
+    const payment = transactionRef
+      ? order.payments.find((item) => item.transaction_ref === transactionRef)
+      : order.payments.find((item) => item.status === 'pending') || order.payments[0];
+    if (!payment || payment.payment_method !== requiredMethod) {
+      throw httpError(409, 'Phương thức thanh toán không khớp.', 'PAYMENT_PROVIDER_MISMATCH');
+    }
+    if (expectedAmount !== undefined && payment.amount !== expectedAmount) {
+      throw httpError(400, 'Số tiền thanh toán không khớp.', 'PAYMENT_AMOUNT_MISMATCH');
     }
     if (order.status === 'confirmed' && payment.status === 'completed') {
       return { order, payment, already_completed: true };
@@ -217,9 +228,9 @@ export async function confirmDemoTravelOrder(orderId, userId) {
       throw httpError(409, 'Đơn vừa được xử lý bởi một yêu cầu khác.', 'ORDER_ALREADY_PROCESSED');
     }
     const paid = await tx.travelOrderPayment.update({ where: { id: payment.id }, data: { status: 'completed' } });
-    const user = await tx.user.update({ where: { id: userId }, data: { reward_points: { increment: earnedPoints } } });
+    const user = await tx.user.update({ where: { id: order.user_id }, data: { reward_points: { increment: earnedPoints } } });
     const tier = getVipTier(user.reward_points);
-    if (tier !== user.vip_tier) await tx.user.update({ where: { id: userId }, data: { vip_tier: tier } });
+    if (tier !== user.vip_tier) await tx.user.update({ where: { id: order.user_id }, data: { vip_tier: tier } });
     const updatedOrder = await tx.travelOrder.findUnique({ where: { id: order.id } });
     return { order: updatedOrder, payment: paid, already_completed: false };
   });
@@ -232,6 +243,14 @@ export async function confirmDemoTravelOrder(orderId, userId) {
     ...serializeTravelOrder({ ...result.order, payments: [result.payment] }),
     already_completed: result.already_completed,
   };
+}
+
+export function confirmDemoTravelOrder(orderId, userId) {
+  return settleTravelOrder({ orderId, userId, requiredMethod: 'Demo' });
+}
+
+export function completePaidTravelOrder({ orderId, transactionRef, expectedAmount }) {
+  return settleTravelOrder({ orderId, transactionRef, expectedAmount, requiredMethod: 'VietQR' });
 }
 
 export async function getUserTravelOrders(userId) {

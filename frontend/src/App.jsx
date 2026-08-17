@@ -1,21 +1,30 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion';
 import Footer from './components/common/Footer';
 import Header from './components/common/Header';
-import TravelAssistantBot from './components/common/TravelAssistantBot';
-import HomePage from './pages/HomePage';
 import { useAuthStore } from './store/useAuthStore';
 
+const routeLoaders = {
+  home: () => import('./pages/HomePage'),
+  cruises: () => import('./pages/CruisesPage'),
+  flights: () => import('./pages/FlightsPage'),
+  hotels: () => import('./pages/HotelsPage'),
+  corporate: () => import('./pages/CorporatePage'),
+  blog: () => import('./pages/BlogPage'),
+  contact: () => import('./pages/ContactPage'),
+};
+
+const HomePage = lazy(routeLoaders.home);
+const TravelAssistantBot = lazy(() => import('./components/common/TravelAssistantBot'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
-const BlogPage = lazy(() => import('./pages/BlogPage'));
+const BlogPage = lazy(routeLoaders.blog);
 const BookingPage = lazy(() => import('./pages/BookingPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const CorporatePage = lazy(() => import('./pages/CorporatePage'));
+const ContactPage = lazy(routeLoaders.contact);
+const CorporatePage = lazy(routeLoaders.corporate);
 const CruiseDetailPage = lazy(() => import('./pages/CruiseDetailPage'));
-const CruisesPage = lazy(() => import('./pages/CruisesPage'));
-const FlightsPage = lazy(() => import('./pages/FlightsPage'));
+const CruisesPage = lazy(routeLoaders.cruises);
+const FlightsPage = lazy(routeLoaders.flights);
 const HotelDetailPage = lazy(() => import('./pages/HotelDetailPage'));
-const HotelsPage = lazy(() => import('./pages/HotelsPage'));
+const HotelsPage = lazy(routeLoaders.hotels);
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'));
 const PackagesPage = lazy(() => import('./pages/PackagesPage'));
@@ -37,17 +46,29 @@ const createDefaultSearchDates = () => ({
 });
 
 function SiteProgress({ hidden }) {
-  const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll();
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 150,
-    damping: 28,
-    mass: 0.3,
-  });
-
-  if (hidden || reduceMotion) return null;
-
-  return <motion.div className="site-progress" style={{ scaleX: progress }} aria-hidden="true" />;
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (hidden) return undefined;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [hidden]);
+  if (hidden) return null;
+  return <div className="site-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />;
 }
 
 function PageFallback() {
@@ -63,6 +84,21 @@ function PageFallback() {
   );
 }
 
+function DeferredAssistant({ onExploreDestination }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const show = () => setReady(true);
+    const idleId = window.requestIdleCallback?.(show, { timeout: 1800 });
+    const timerId = window.setTimeout(show, 1800);
+    return () => {
+      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
+      window.clearTimeout(timerId);
+    };
+  }, []);
+  if (!ready) return null;
+  return <Suspense fallback={null}><TravelAssistantBot onExploreDestination={onExploreDestination} /></Suspense>;
+}
+
 export default function App() {
   const { fetchProfile } = useAuthStore();
   const [activeTab, setActiveTab] = useState('home');
@@ -72,7 +108,6 @@ export default function App() {
   const [postLoginTab, setPostLoginTab] = useState(null);
   const [preferredDestination, setPreferredDestination] = useState('');
   const [searchDates, setSearchDates] = useState(createDefaultSearchDates);
-  const reduceMotion = useReducedMotion();
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('dibaoxa_theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
@@ -137,16 +172,14 @@ export default function App() {
             setActiveTab={setActiveTab}
             theme={theme}
             onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+            onPrefetch={(tab) => routeLoaders[tab]?.()}
           />
         )}
 
-        <motion.main
+        <main
           id="main-content"
           key={activeTab}
           className={activeTab === 'admin' ? '' : (activeTab === 'login' || activeTab === 'register' ? 'route-stage route-stage--auth' : 'route-stage')}
-          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
         >
             <Suspense fallback={<PageFallback />}>
               {activeTab === 'home' && (
@@ -241,11 +274,11 @@ export default function App() {
                 <AdminDashboardPage onExitAdmin={() => setActiveTab('home')} />
               )}
             </Suspense>
-          </motion.main>
+          </main>
       </div>
 
       {activeTab !== 'admin' && activeTab !== 'login' && activeTab !== 'register' && <Footer onNavigate={setActiveTab} />}
-      {activeTab !== 'admin' && activeTab !== 'login' && activeTab !== 'register' && <TravelAssistantBot onExploreDestination={handleExploreDestination} />}
+      {activeTab !== 'admin' && activeTab !== 'login' && activeTab !== 'register' && <DeferredAssistant onExploreDestination={handleExploreDestination} />}
 
     </div>
   );

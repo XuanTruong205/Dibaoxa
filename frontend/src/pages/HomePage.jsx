@@ -19,7 +19,7 @@ import {
 import { motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import { CRUISE_DESTINATIONS } from '../data/travelCatalog';
-import api from '../services/api';
+import { cachedGet } from '../services/api';
 
 const REVIEWS = [
   {
@@ -111,10 +111,22 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
   const [budget, setBudget] = useState('all');
   const [reviewIndex, setReviewIndex] = useState(0);
   const [cruises, setCruises] = useState([]);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    if (reduceMotion || navigator.connection?.saveData) return undefined;
+    const enableVideo = () => setVideoReady(true);
+    const idleId = window.requestIdleCallback?.(enableVideo, { timeout: 1200 });
+    const timerId = window.setTimeout(enableVideo, 1200);
+    return () => {
+      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
+      window.clearTimeout(timerId);
+    };
+  }, [reduceMotion]);
 
   useEffect(() => {
     let active = true;
-    api.get('/cruises').then((response) => {
+    cachedGet('/cruises').then((response) => {
       if (active && Array.isArray(response?.data?.data)) setCruises(response.data.data);
     }).catch(() => { if (active) setCruises([]); });
     return () => { active = false; };
@@ -142,14 +154,14 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
     <div className="mixi-home-page">
       <section className="mixi-home-hero" aria-label="Tìm du thuyền">
         <motion.video
-          src="/videos/dibaoxa-cruise-hero.mp4"
+          src={videoReady ? '/videos/dibaoxa-cruise-hero.mp4' : undefined}
           poster="/images/dibaoxa-cruise-hero.png"
           aria-label="Du thuyền hiện đại đi giữa vịnh Hạ Long"
-          autoPlay={!reduceMotion}
+          autoPlay={videoReady && !reduceMotion}
           loop
           muted
           playsInline
-          preload="metadata"
+          preload={videoReady ? 'metadata' : 'none'}
           disablePictureInPicture
           initial={reduceMotion ? false : { opacity: 0, scale: 1.025 }}
           animate={{ opacity: 1, scale: 1 }}

@@ -16,6 +16,29 @@ export default function BookingPage({ onBack, onSuccess }) {
   const [guestCount, setGuestCount] = useState(1);
   const [formError, setFormError] = useState('');
   const [pendingBookingId, setPendingBookingId] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
+
+  useEffect(() => {
+    const reference = paymentData?.payment?.transaction_ref;
+    if (!paymentModalOpen || !reference) return undefined;
+    let stopped = false;
+    const checkStatus = async () => {
+      try {
+        const response = await api.get(`/payments/status/${encodeURIComponent(reference)}`);
+        if (!stopped && response.data.data?.status === 'completed') {
+          clearActiveHold();
+          await refreshProfile();
+          setPaymentModalOpen(false);
+          onSuccess(response.data.data.data);
+        }
+      } catch {
+        // Keep polling: temporary network failures must not alter payment state.
+      }
+    };
+    checkStatus();
+    const timer = window.setInterval(checkStatus, 3000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [paymentData?.payment?.transaction_ref, paymentModalOpen, clearActiveHold, refreshProfile, onSuccess]);
 
   useEffect(() => {
     if (!activeHold?.expires_at) return undefined;
@@ -70,8 +93,7 @@ export default function BookingPage({ onBack, onSuccess }) {
   const handleConfirmFinalBooking = async (paymentMethod) => {
     setLoading(true);
     try {
-      let bookingId = pendingBookingId;
-      if (!bookingId) {
+      if (!pendingBookingId) {
         const payload = {
           hold_id: activeHold.hold_id,
           room_id: room.id,
@@ -85,17 +107,13 @@ export default function BookingPage({ onBack, onSuccess }) {
           payment_method: paymentMethod,
         };
         const pendingResponse = await api.post('/bookings/confirm', payload);
-        bookingId = pendingResponse.data.data?.booking_id;
+        const pending = pendingResponse.data.data;
+        const bookingId = pending?.booking_id;
         if (!bookingId) throw new Error('Máy chủ không trả về mã đơn đang chờ thanh toán.');
         setPendingBookingId(bookingId);
+        setPaymentData(pending);
       }
-
-      const res = await api.post(`/payments/demo-confirm/${bookingId}`);
-      clearActiveHold();
-      await refreshProfile();
-      setPaymentModalOpen(false);
       setLoading(false);
-      onSuccess(res.data.data);
     } catch (error) {
       setLoading(false);
       alert(error.message || 'Thanh toán thất bại. Vui lòng thử lại.');
@@ -309,6 +327,7 @@ export default function BookingPage({ onBack, onSuccess }) {
           grandTotal={grandTotal}
           selectedServices={selectedServices}
           loading={loading}
+          paymentData={paymentData}
           onConfirm={handleConfirmFinalBooking}
           onClose={() => setPaymentModalOpen(false)}
         />

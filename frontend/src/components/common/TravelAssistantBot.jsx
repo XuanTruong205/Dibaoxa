@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import api from '../../services/api';
+import api, { cachedGet } from '../../services/api';
 
 const INITIAL_SUGGESTIONS = [
   'Gợi ý kỳ nghỉ gần biển',
@@ -83,7 +83,7 @@ export default function TravelAssistantBot({ onExploreDestination }) {
 
   useEffect(() => {
     let mounted = true;
-    api.get('/assistant/status')
+    cachedGet('/assistant/status', {}, 60_000)
       .then((response) => {
         if (!mounted) return;
         setStatus(response.data.data);

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { serializeAmbassadorCruise } from './ambassador-cruise.js';
+import { getAmbassadorDepartureDates, serializeAmbassadorCruise } from './ambassador-cruise.js';
 
 const prisma = new PrismaClient();
 
@@ -17,26 +17,454 @@ const HOTEL_IDS = {
 
 const toJson = (value) => JSON.stringify(value);
 
-const cruiseFixtures = [
-  { id: 'cruise-heritage-binh-chuan-cat-ba', name: 'Heritage Bình Chuẩn Cát Bà', operator: 'Heritage Cruises', destination: 'Lan Hạ', departure_port: 'Bến Gót, Cát Hải, Hải Phòng', duration_days: 2, price: 5050000, rating: 9.4, review_count: 128, ship_class: 5, image: '/images/dibaoxa-cruise-hero.png', features: ['Ban công riêng', 'Bể bơi', 'Spa', 'Bữa ăn trọn gói', 'Phòng gia đình'], cabins: ['Delta Suite', 'Ocean Suite', 'Captain Suite', 'Heritage Family'], itinerary: ['Đón khách tại Cát Hải', 'Vịnh Lan Hạ và hang Sáng Tối', 'Làng Việt Hải, trả khách'] },
-  { id: 'cruise-heritage-dawn', name: 'Heritage Dawn Hạ Long', operator: 'Dibaoxa Select', destination: 'Hạ Long', departure_port: 'Cảng Tuần Châu', duration_days: 2, price: 4850000, rating: 9.3, review_count: 186, ship_class: 5, image: '/images/dibaoxa-cruise-hero.png', features: ['Ban công riêng', 'Chèo kayak', 'Bể bơi', 'Bữa ăn trọn gói'], cabins: ['Deluxe Ocean', 'Suite Balcony', 'Family Connecting'], itinerary: ['Đón khách tại Tuần Châu', 'Hang Sửng Sốt và chèo kayak', 'Ngắm bình minh, trả khách'] },
-  { id: 'cruise-lanha-serenity', name: 'Lan Hạ Serenity', operator: 'Emerald Passage', destination: 'Lan Hạ', departure_port: 'Bến Gót, Cát Hải', duration_days: 3, price: 7290000, rating: 9.5, review_count: 142, ship_class: 5, image: '/images/dibaoxa-cruise-hero.png', features: ['Ban công riêng', 'Chèo kayak', 'Spa', 'Bữa ăn trọn gói'], cabins: ['Junior Suite', 'Executive Suite', 'Lan Hạ Signature'], itinerary: ['Khởi hành từ Cát Hải', 'Làng Việt Hải và đảo Cát Bà', 'Ao Ếch, trả khách'] },
-  { id: 'cruise-sapphire-passage', name: 'Sapphire Passage', operator: 'Northern Sails', destination: 'Hạ Long', departure_port: 'Cảng quốc tế Hạ Long', duration_days: 2, price: 3590000, rating: 8.8, review_count: 264, ship_class: 4, image: '/images/dibaoxa-discover-vietnam.webp', features: ['Chèo kayak', 'Lớp nấu ăn', 'Bữa ăn trọn gói'], cabins: ['Ocean View', 'Premium Bay View'], itinerary: ['Đón khách tại Bãi Cháy', 'Đảo Ti Tốp và hang Luồn', 'Trả khách tại Hạ Long'] },
-  { id: 'cruise-mekong-horizon', name: 'Mekong Horizon', operator: 'Southern River Co.', destination: 'Mekong', departure_port: 'Bến Ninh Kiều, Cần Thơ', duration_days: 3, price: 6120000, rating: 9.1, review_count: 97, ship_class: 5, image: '/images/dibaoxa-coastal-resort.webp', features: ['Ban công riêng', 'Lớp nấu ăn', 'Xe đạp làng quê', 'Bữa ăn trọn gói'], cabins: ['River Deluxe', 'Mekong Suite'], itinerary: ['Chợ nổi Cái Răng', 'Cù lao An Bình', 'Trả khách tại Cần Thơ'] },
-  { id: 'cruise-nhatrang-blue', name: 'Nha Trang Blue Voyage', operator: 'Coastal Journey', destination: 'Nha Trang', departure_port: 'Cảng Cầu Đá', duration_days: 1, price: 1890000, rating: 8.6, review_count: 211, ship_class: 4, image: '/images/dibaoxa-coastal-resort.webp', features: ['Lặn ống thở', 'Bữa trưa hải sản', 'Ván chèo đứng'], cabins: ['Day Lounge', 'Private Lounge'], itinerary: ['Đón khách tại Cầu Đá', 'Hòn Mun và làng chài', 'Hoàng hôn trên vịnh'] },
-  { id: 'cruise-condao-voyager', name: 'Côn Đảo Voyager', operator: 'Island Passage', destination: 'Côn Đảo', departure_port: 'Cảng Bến Đầm', duration_days: 2, price: 5380000, rating: 9, review_count: 78, ship_class: 5, image: '/images/dibaoxa-cruise-hero.png', features: ['Ban công riêng', 'Lặn ống thở', 'Bữa ăn trọn gói'], cabins: ['Island View', 'Voyager Suite'], itinerary: ['Khởi hành từ Bến Đầm', 'Hòn Bảy Cạnh và lặn ống thở', 'Trả khách tại Côn Đảo'] },
-].map((cruise) => ({
+const MEDIA_HALONG = '/images/cruises/ambassador-halong';
+
+const cruiseRawFixtures = [
+  {
+    id: 'cruise-heritage-binh-chuan-cat-ba',
+    name: 'Du thuyền Heritage Bình Chuẩn Cát Bà',
+    operator: 'Heritage Cruises',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Tuần Châu / Bến Gót, Cát Hải, Hải Phòng',
+    duration_days: 2,
+    price: 3650000,
+    rating: 9.6,
+    review_count: 185,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-sunset.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-sunset.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-private-terrace.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+      `${MEDIA_HALONG}/ambassador-jacuzzi-01.png`,
+    ],
+    features: [
+      'Phong cách Indochine',
+      'Bể bơi 4 mùa',
+      '100% phòng có ban công',
+      'Thư viện nghệ thuật Bạch Thái Bưởi',
+      'Chèo kayak hang Sáng Tối',
+      'Ẩm thực Bắc Bộ thượng hạng',
+    ],
+    cabins: ['Delta Suite Balcony', 'Ocean Suite Balcony', 'Captain Suite', 'Regal Family Suite'],
+    itinerary: [
+      'Ngày 1 · Đón khách tại Cảng Tuần Châu, thưởng thức bữa trưa và ngắm vịnh Lan Hạ hoang sơ',
+      'Chiều · Khám phá hang Sáng Tối bằng kayak hoặc thuyền nan, tắm biển tại bãi Ba Trái Đào',
+      'Tối · Tiệc trà chiều ngắm hoàng hôn, thưởng thức bữa tối fine dining và câu mực đêm',
+      'Ngày 2 · Đón bình minh, lớp học Vovinam/Tai Chi, tham quan làng chài Trà Báu và trở về bến',
+    ],
+    description: 'Du thuyền Heritage Bình Chuẩn Cát Bà mang đậm phong cách kiến trúc Đông Dương thế kỷ 20, tôn vinh huyền thoại "Vua tàu thủy" Bạch Thái Bưởi. Không gian nghệ thuật độc bản, bể bơi 4 mùa giữa biển và hải trình nguyên sơ tại vịnh Lan Hạ mang lại kỳ nghỉ sang trọng bậc nhất.',
+    policies: [
+      'Giá bao gồm phòng nghỉ theo hạng, trọn gói 4 bữa ăn cao cấp, vé tham quan và hoạt động kayak',
+      'Lịch trình có thể thay đổi tùy thuộc vào điều kiện thời tiết và quy định của Ban quản lý Vịnh',
+      'Trẻ em dưới 5 tuổi miễn phí 01 bé theo tiêu chuẩn phòng',
+    ],
+    faqs: [
+      { question: 'Du thuyền khởi hành từ đâu?', answer: 'Du thuyền đón khách tại Lô 28, Cảng quốc tế Tuần Châu, Hạ Long hoặc hỗ trợ đón tại Bến Phà Gót Hải Phòng.' },
+      { question: 'Trên tàu có phục vụ ăn chay không?', answer: 'Tàu có thực đơn chay và món ăn kiêng theo yêu cầu nếu được báo trước khi nhận phòng.' },
+    ],
+    specifications: { launchedYear: 2019, cabinCount: 20, hullMaterial: 'Vỏ thép đóng mới', route: 'Tuần Châu · Vịnh Lan Hạ · Hang Sáng Tối · Ba Trái Đào' },
+  },
+  {
+    id: 'cruise-indochine',
+    name: 'Du thuyền Indochine Cruise',
+    operator: 'Indochina Sails',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Quốc tế Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 3350000,
+    rating: 9.5,
+    review_count: 168,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-aerial.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-aerial.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant-service.png`,
+      `${MEDIA_HALONG}/ambassador-jacuzzi-02.png`,
+    ],
+    features: [
+      'Thiết kế Đông Dương cổ điển',
+      'Bể sục Jacuzzi bốn mùa',
+      'Sundeck ngắm hoàng hôn 360°',
+      'Nhà hàng Cochinchine sang trọng',
+      'Lớp học Tai Chi & Nấu ăn',
+      'Chèo kayak vịnh Lan Hạ',
+    ],
+    cabins: ['Junior Suite Balcony', 'Suite Balcony', 'Executive Suite', 'President Suite'],
+    itinerary: [
+      'Ngày 1 · Làm thủ tục tại Tuần Châu, khởi hành qua Vịnh Hạ Long tiến vào Vịnh Lan Hạ',
+      'Chiều · Trải nghiệm chèo kayak tại Hang Sáng Tối, tắm biển và thư giãn bồn sục Jacuzzi',
+      'Tối · Thưởng thức tiệc ẩm thực Á-Âu tại nhà hàng Tonkin, xem phim hoặc câu mực đêm',
+      'Ngày 2 · Tập dưỡng sinh Tai Chi, khám phá hang Trung Trang (Cát Bà) và cập bến Tuần Châu',
+    ],
+    description: 'Du thuyền 5 sao Indochine Cruise là biểu tượng của sự kết hợp tinh tế giữa vẻ đẹp truyền thống Indochine và tiêu chuẩn xa hoa quốc tế. Với 43 cabin rộng rãi ngập tràn ánh sáng cùng 2 nhà hàng lớn, Indochine mang đến trải nghiệm khám phá vịnh Lan Hạ đẳng cấp.',
+    policies: [
+      'Giá đã bao gồm 3 bữa ăn chính + 1 bữa sáng nhẹ, vé thắng cảnh và bảo hiểm trên tàu',
+      'Nhận phòng lúc 12:15 và trả phòng lúc 11:00 hôm sau',
+      'Chính sách hoàn hủy linh hoạt trước 7 ngày không tính phí',
+    ],
+    faqs: [
+      { question: 'Tàu có cabin thông nhau cho gia đình không?', answer: 'Có, Indochine Cruise có hạng phòng Connecting Suite dành riêng cho gia đình từ 4-5 người.' },
+    ],
+    specifications: { launchedYear: 2019, cabinCount: 43, hullMaterial: 'Vỏ thép chuẩn quốc tế', route: 'Tuần Châu · Vịnh Lan Hạ · Hang Sáng Tối · Động Trung Trang' },
+  },
+  {
+    id: 'cruise-le-theatre',
+    name: 'Du thuyền Le Théâtre Cruises',
+    operator: 'Le Théâtre Cruise Line',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 3450000,
+    rating: 9.5,
+    review_count: 142,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-front.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+      `${MEDIA_HALONG}/ambassador-jacuzzi-03.png`,
+    ],
+    features: [
+      'Kiến trúc Nhà Hát Opera Pháp độc đáo',
+      'Bể sục vô cực ngoài trời',
+      'Nhà hàng Le Opera phong cách Art Deco',
+      'Ban công riêng 100% phòng',
+      'Chèo kayak tại Ao Ếch',
+      'Bar & Lounge ngắm vịnh',
+    ],
+    cabins: ['Junior Suite', 'Executive Suite', 'Panorama Suite', 'Le Théâtre Suite'],
+    itinerary: [
+      'Ngày 1 · Đón khách tại bến Tuần Châu, thưởng thức bữa trưa tại nhà hàng Opera độc đáo',
+      'Chiều · Tham quan khu vực Ao Ếch, chèo kayak lướt qua những ngọn núi đá vôi kỳ vĩ',
+      'Tối · Tiệc Sunset Party tại quầy bar Sundeck, thưởng thức bữa tối kiểu Pháp thượng hạng',
+      'Ngày 2 · Ngắm bình minh, lớp học làm nem cuốn Việt Nam, ghé Hang Sáng Tối trước khi về bến',
+    ],
+    description: 'Được mệnh danh là "Du thuyền Nhà hát trên biển", Le Théâtre Cruises tạo ấn tượng mạnh mẽ với lối kiến trúc tân cổ điển sang trọng lấy cảm hứng từ nhà hát Opera. Không gian mở ngập tràn nghệ thuật và ẩm thực xuất sắc giúp mỗi khoảnh khắc đều trở nên thi vị.',
+    policies: [
+      'Bao gồm toàn bộ bữa ăn, vé tham quan, nước suối trong phòng và bảo hiểm du lịch',
+      'Phụ thu người thứ 3 hoặc trẻ em tính theo chính sách du thuyền',
+    ],
+    faqs: [
+      { question: 'Phòng Panorama Suite có gì đặc biệt?', answer: 'Panorama Suite nằm ở mũi tàu với tầm nhìn 180 độ không góc chết hướng thẳng ra vịnh Lan Hạ.' },
+    ],
+    specifications: { launchedYear: 2020, cabinCount: 21, hullMaterial: 'Thép mạ kẽm cao cấp', route: 'Tuần Châu · Vịnh Lan Hạ · Vũng Ao Ếch · Hang Sáng Tối' },
+  },
+  {
+    id: 'cruise-azalea',
+    name: 'Du thuyền Azalea Cruise',
+    operator: 'Azalea Cruise Group',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Tuần Châu / Bến Gót, Hải Phòng',
+    duration_days: 2,
+    price: 3150000,
+    rating: 9.3,
+    review_count: 120,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-bath-view.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-bath-view.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+      `${MEDIA_HALONG}/ambassador-jacuzzi-04.png`,
+    ],
+    features: [
+      'Phong cách Boutique sang trọng',
+      'Bồn tắm view kính toàn cảnh vịnh',
+      'Thực đơn Halal & Vegetarian theo yêu cầu',
+      'Chèo Kayak & tắm biển tự do',
+      'Tiệc ngắm hoàng hôn với Cocktail',
+    ],
+    cabins: ['Deluxe Balcony Cabin', 'Premium Balcony Cabin', 'Azalea Exclusive Suite', 'Family Connecting Room'],
+    itinerary: [
+      'Ngày 1 · Lên tàu tại bến Tuần Châu, ăn trưa ngắm cảnh kỳ vĩ của hàng nghìn hòn đảo',
+      'Chiều · Khám phá hang Sáng Tối bằng đò nan, chèo kayak tại Ba Trái Đào',
+      'Tối · Trải nghiệm lớp học nấu ăn truyền thống, tiệc cocktail hoàng hôn và dạ tiệc hải sản',
+      'Ngày 2 · Thể dục Tai Chi, khám phá hang Trung Trang và trở về bến trả phòng',
+    ],
+    description: 'Azalea Cruise là dòng du thuyền boutique cao cấp chú trọng vào sự riêng tư và trải nghiệm nghỉ dưỡng thư thái. Mỗi cabin đều được trang bị bồn tắm kính nhìn thẳng ra vịnh biển xanh ngọc, mang lại không gian thư giãn tuyệt đối.',
+    policies: [
+      'Miễn phí trà, cà phê và 2 chai nước khoáng mỗi ngày trong phòng',
+      'Áp dụng phụ thu mùa cao điểm và các ngày lễ Tết theo quy định',
+    ],
+    faqs: [
+      { question: 'Tàu có cung cấp đồ ăn cho khách đạo Hồi không?', answer: 'Có, Azalea Cruise cung cấp thực đơn Halal đạt chuẩn khi khách thông báo trước 24h.' },
+    ],
+    specifications: { launchedYear: 2018, cabinCount: 20, hullMaterial: 'Kim loại', route: 'Tuần Châu · Vịnh Lan Hạ · Hang Sáng Tối · Ba Trái Đào' },
+  },
+  {
+    id: 'cruise-pelican-halong',
+    name: 'Du thuyền Pelican Hạ Long Cruise',
+    operator: 'Pelican Group',
+    destination: 'Hạ Long',
+    departure_port: 'Cảng Quốc tế Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 2650000,
+    rating: 9.1,
+    review_count: 215,
+    ship_class: 4,
+    image: `${MEDIA_HALONG}/ambassador-sunset-dinner.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-sunset-dinner.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-buffet.png`,
+    ],
+    features: [
+      'Vỏ thép tiêu chuẩn an toàn cao',
+      'Ban công riêng đón gió biển',
+      'Thăm Hang Sửng Sốt & Đảo Ti Tốp',
+      'Lớp tập dưỡng sinh Tai Chi buổi sáng',
+      'Bữa tối BBQ hải sản tươi ngon',
+    ],
+    cabins: ['Deluxe Ocean View', 'Suite Balcony', 'Family Suite', 'Royal Suite'],
+    itinerary: [
+      'Ngày 1 · Xuất bến Tuần Châu, ăn trưa buffet và chiêm ngưỡng Vịnh Hạ Long',
+      'Chiều · Khám phá Hang Sửng Sốt - hang động lớn nhất vịnh, leo núi Ti Tốp ngắm toàn cảnh',
+      'Tối · Thưởng thức tiệc BBQ hải sản Hạ Long tươi sống, câu mực đêm cùng thủy thủ đoàn',
+      'Ngày 2 · Tập Thái Cực Quyền trên boong, thăm trang trại nuôi cấy ngọc trai Tùng Sâu',
+    ],
+    description: 'Pelican Hạ Long Cruise là sự lựa chọn hoàn hảo cho du khách mong muốn trải nghiệm trọn vẹn vẻ đẹp di sản vịnh Hạ Long với mức giá vô cùng hợp lý. Đội ngũ thủy thủ dày dặn kinh nghiệm cùng các hoạt động tham quan biểu tượng mang lại chuyến đi đáng nhớ.',
+    policies: [
+      'Bao gồm vé thắng cảnh tuyến 2 Hạ Long, bữa ăn và hướng dẫn viên song ngữ',
+      'Hủy phòng trước 5 ngày khởi hành không mất phí',
+    ],
+    faqs: [
+      { question: 'Tàu có đón trả khách tại Hà Nội không?', answer: 'Có hỗ trợ xe Limousine đưa đón khứ hồi Hà Nội - Hạ Long (có phụ phí).' },
+    ],
+    specifications: { launchedYear: 2016, cabinCount: 22, hullMaterial: 'Vỏ thép đôi an toàn', route: 'Tuần Châu · Hang Sửng Sốt · Đảo Ti Tốp · Ngọc Trai Tùng Sâu' },
+  },
+  {
+    id: 'cruise-paradise-elegance',
+    name: 'Du thuyền Paradise Elegance Hạ Long',
+    operator: 'Paradise Vietnam Group',
+    destination: 'Hạ Long',
+    departure_port: 'Cảng Quốc tế Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 4150000,
+    rating: 9.7,
+    review_count: 320,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-deck-event.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-deck-event.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+      `${MEDIA_HALONG}/ambassador-wine-cellar.png`,
+    ],
+    features: [
+      'Du thuyền vỏ thép sang trọng bậc nhất Hạ Long',
+      'Nhà hàng Le Marin phục vụ thực đơn Á-Âu thượng hạng',
+      'Piano Bar biểu diễn nhạc sống',
+      'Spa chuyên nghiệp phong cách Thái',
+      'Ban công riêng biệt cho mọi hạng phòng',
+    ],
+    cabins: ['Deluxe Balcony', 'Executive Balcony', 'Elegance Balcony Suite', 'Captain Suite'],
+    itinerary: [
+      'Ngày 1 · Đón khách tại Paradise Lounge Tuần Châu, thưởng thức bữa trưa tự chọn cao cấp',
+      'Chiều · Tham quan Hang Sửng Sốt, chèo kayak tại Hang Luồn và tắm biển đảo Ti Tốp',
+      'Tối · Thưởng thức ẩm thực fine dining tại Le Marin, nghe nhạc sống tại Piano Bar',
+      'Ngày 2 · Lớp Thái Cực Quyền đón bình minh, tham quan Động Thiên Cung và trở về bến',
+    ],
+    description: 'Paradise Elegance là tuyệt tác du thuyền 5 sao của tập đoàn Paradise Vietnam, nổi danh với dịch vụ đẳng cấp hoàng gia, không gian nhà hàng lộng lẫy và ban nhạc sống trình diễn mỗi tối. Đây là chuẩn mực của sự xa hoa giữa lòng vịnh kỳ quan.',
+    policies: [
+      'Trọn gói ẩm thực cao cấp, vé tham quan, trải nghiệm kayak và dịch vụ biểu diễn',
+      'Nhận phòng tại sảnh chờ máy lạnh cao cấp riêng biệt tại Cảng Tuần Châu',
+    ],
+    faqs: [
+      { question: 'Piano Bar hoạt động vào khung giờ nào?', answer: 'Piano Bar phục vụ nhạc sống từ 20:30 đến 22:30 mỗi tối trên du thuyền.' },
+    ],
+    specifications: { launchedYear: 2017, cabinCount: 31, hullMaterial: 'Thép cao cấp', route: 'Tuần Châu · Hang Sửng Sốt · Đảo Ti Tốp · Hang Luồn' },
+  },
+  {
+    id: 'cruise-paradise-peak',
+    name: 'Du thuyền Paradise Peak Hạ Long',
+    operator: 'Paradise Vietnam Group',
+    destination: 'Hạ Long',
+    departure_port: 'Cảng Quốc tế Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 5850000,
+    rating: 9.8,
+    review_count: 110,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-suite-dining.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-suite-dining.png`,
+      `${MEDIA_HALONG}/ambassador-suite-bath.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-wine-cellar.png`,
+    ],
+    features: [
+      'Du thuyền siêu sang chuẩn Private Luxury (chỉ 8 cabin)',
+      'Quản gia riêng (Butler Service) phục vụ 24/7',
+      'Phòng xông hơi Sauna & Jacuzzi riêng trong phòng',
+      'Bữa tối fine dining 5 món phục vụ tại ban công riêng',
+      'Lịch trình thiết kế riêng linh hoạt',
+    ],
+    cabins: ['Junior Suite', 'Superior Suite', 'Premium Suite', 'Paradise Peak Suite'],
+    itinerary: [
+      'Ngày 1 · Dịch vụ đón tiếp VIP tại Paradise Lounge, quản gia nhận phòng và tư vấn lịch trình',
+      'Chiều · Du ngoạn qua các vùng vịnh tĩnh lặng, chèo kayak hang Trinh Nữ, thư giãn sauna tại phòng',
+      'Tối · Thưởng thức bữa tối 5 món do Bếp trưởng chuẩn bị riêng kèm rượu vang hảo hạng',
+      'Ngày 2 · Bữa sáng phục vụ tại giường hoặc ban công riêng, khám phá hang động kỳ bí trước khi về cảng',
+    ],
+    description: 'Paradise Peak được xem là du thuyền đỉnh cao xa xỉ tại Vịnh Hạ Long với số lượng giới hạn chỉ 8 cabin siêu rộng. Tích hợp quản gia riêng, phòng gym, spa và bồn sục jacuzzi ngay trong từng phòng ngủ, đem lại sự riêng tư tối thượng cho giới thượng lưu.',
+    policies: [
+      'Toàn bộ dịch vụ quản gia, ẩm thực theo yêu cầu và đồ uống không cồn đều được bao gồm',
+      'Yêu cầu đặt cọc trước để bảo đảm lịch khởi hành và giữ phòng riêng',
+    ],
+    faqs: [
+      { question: 'Khách có thể yêu cầu bữa ăn phục vụ tại phòng không?', answer: 'Có, quản gia sẽ phục vụ bữa trưa và bữa tối ngay tại ban công riêng tư của phòng bạn.' },
+    ],
+    specifications: { launchedYear: 2016, cabinCount: 8, hullMaterial: 'Gỗ quý bọc thép cao cấp', route: 'Tuần Châu · Hang Trinh Nữ · Hồ Động Tiên · Tuyến đảo riêng tư' },
+  },
+  {
+    id: 'cruise-aspira',
+    name: 'Du thuyền Aspira Cruises',
+    operator: 'Aspira Cruise Hospitality',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Tuần Châu / Bến Gót, Hải Phòng',
+    duration_days: 2,
+    price: 3250000,
+    rating: 9.4,
+    review_count: 145,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-jacuzzi-01.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-jacuzzi-01.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+    ],
+    features: [
+      'Thiết kế hiện đại phong cách hoàng gia',
+      'Hồ bơi vô cực dát vàng trên Sundeck',
+      'Phòng Gym & Spa hướng biển',
+      'Trang thiết bị nội thất nhập khẩu châu Âu',
+      'Bữa tối nướng BBQ hải sản Hạ Long',
+    ],
+    cabins: ['Junior Suite Balcony', 'Senior Suite Balcony', 'Executive Suite Private Terrace', 'President Suite'],
+    itinerary: [
+      'Ngày 1 · Lên tàu tại bến Tuần Châu, ăn trưa ngắm cảnh thiên nhiên vịnh Lan Hạ',
+      'Chiều · Trải nghiệm chèo kayak tại khu vực Trà Báu hoặc bơi lội giữa làn nước xanh biếc',
+      'Tối · Tiệc Sunset Party trên Sundeck, thưởng thức tiệc BBQ hải sản và câu mực đêm',
+      'Ngày 2 · Khám phá Hang Sáng Tối bằng thuyền đò chèo tay người dân địa phương và trở về bến',
+    ],
+    description: 'Aspira Cruises sở hữu phong cách thiết kế đương đại trẻ trung và lãng mạn. Điểm nhấn nổi bật của du thuyền là bể bơi vô cực trên tầng thượng nhìn ngắm toàn cảnh non nước Lan Hạ cùng hệ thống phòng suite ban công tràn ngập ánh nắng.',
+    policies: [
+      'Bao gồm phòng nghỉ, 4 bữa ăn tiêu chuẩn, vé thắng cảnh, chèo thuyền kayak',
+      'Trẻ em dưới 4 tuổi miễn phí đi cùng bố mẹ',
+    ],
+    faqs: [
+      { question: 'Bể bơi trên Sundeck mở cửa lúc nào?', answer: 'Bể bơi mở cửa tự do phục vụ du khách từ 06:00 đến 22:00 hàng ngày.' },
+    ],
+    specifications: { launchedYear: 2020, cabinCount: 22, hullMaterial: 'Vỏ thép hiện đại', route: 'Tuần Châu · Vịnh Lan Hạ · Trà Báu · Hang Sáng Tối' },
+  },
+  {
+    id: 'cruise-la-pandora',
+    name: 'Du thuyền La Pandora Cruise',
+    operator: 'La Pandora Cruises',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 2850000,
+    rating: 9.2,
+    review_count: 160,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-cave-dinner.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-cave-dinner.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+    ],
+    features: [
+      'Du thuyền 5 sao giá tốt nhất phân khúc',
+      'Phòng nghỉ ốp gỗ cao cấp ấm cúng',
+      'Ban công riêng ngắm vịnh toàn cảnh',
+      'Chèo kayak tại khu vực Ao Ếch',
+      'Câu mực đêm và tiệc Cocktail ngắm hoàng hôn',
+    ],
+    cabins: ['Deluxe Balcony', 'Executive Balcony', 'La Pandora Suite', 'Family Connecting Cabin'],
+    itinerary: [
+      'Ngày 1 · Khởi hành từ Cảng Tuần Châu, ăn trưa với thực đơn hải sản tươi ngon',
+      'Chiều · Khám phá vụng Ao Ếch yên bình, chèo thuyền kayak và thỏa sức bơi lội',
+      'Tối · Thưởng thức tiệc nướng BBQ, giao lưu âm nhạc và thử tài câu mực đêm',
+      'Ngày 2 · Lớp tập dưỡng sinh buổi sáng, thăm Hang Sáng Tối trước khi làm thủ tục trả phòng',
+    ],
+    description: 'La Pandora Cruise là lựa chọn 5 sao được yêu thích hàng đầu nhờ dịch vụ tận tâm, giá cả hợp lý và các phòng nghỉ rộng rãi ốp gỗ tự nhiên sang trọng. Không gian ấm cúng rất thích hợp cho kỳ nghỉ của gia đình và cặp đôi.',
+    policies: [
+      'Bao gồm đầy đủ bữa ăn theo chương trình, kayak, vé tham quan và hướng dẫn viên',
+      'Đổi ngày khởi hành miễn phí trước 5 ngày',
+    ],
+    faqs: [
+      { question: 'Du thuyền có đón khách tại các khách sạn ở Bãi Cháy không?', answer: 'Có, xe buýt đưa đón có thể đón khách tại các khách sạn khu vực trung tâm Bãi Cháy.' },
+    ],
+    specifications: { launchedYear: 2019, cabinCount: 24, hullMaterial: 'Thép mạ kẽm', route: 'Tuần Châu · Vịnh Lan Hạ · Vũng Ao Ếch · Hang Sáng Tối' },
+  },
+  {
+    id: 'cruise-orchid-premium',
+    name: 'Du thuyền Orchid Premium Cruises Hạ Long',
+    operator: 'Orchid Cruises (Pelican Group)',
+    destination: 'Lan Hạ',
+    departure_port: 'Cảng Quốc tế Tuần Châu, Hạ Long',
+    duration_days: 2,
+    price: 4650000,
+    rating: 9.7,
+    review_count: 175,
+    ship_class: 5,
+    image: `${MEDIA_HALONG}/ambassador-suite-bath.png`,
+    gallery_images: [
+      `${MEDIA_HALONG}/ambassador-suite-bath.png`,
+      `${MEDIA_HALONG}/ambassador-suite.png`,
+      `${MEDIA_HALONG}/ambassador-front.png`,
+      `${MEDIA_HALONG}/ambassador-jacuzzi-01.png`,
+      `${MEDIA_HALONG}/ambassador-restaurant.png`,
+    ],
+    features: [
+      'Cảm hứng hoa lan Đông Dương quý phái',
+      'Chỉ 5 phòng VIP bồn tắm view kính vô cực',
+      'Đầu bếp riêng chuẩn Michelin phục vụ tôm hùm',
+      'Hải trình biệt lập không đông đúc',
+      'Chèo kayak vịnh Lan Hạ & Ba Trái Đào',
+    ],
+    cabins: ['Premium Suite Balcony', 'Exclusive Orchid Suite', 'Master Orchid Suite'],
+    itinerary: [
+      'Ngày 1 · Đón khách tại nhà chờ riêng Tuần Châu, dùng bữa trưa thịnh soạn ngắm cảnh vịnh',
+      'Chiều · Chèo thuyền kayak khám phá Ba Trái Đào, tắm biển và thư giãn bồn tắm hoa hồng',
+      'Tối · Thưởng thức tiệc tối fine dining với tôm hùm và rượu vang, ngắm sao trên boong tàu',
+      'Ngày 2 · Lớp Thái Cực Quyền sáng sớm, tham quan Hang Sáng Tối và trở về bến Tuần Châu',
+    ],
+    description: 'Orchid Premium Cruises là siêu du thuyền nghỉ dưỡng riêng tư bậc nhất chỉ với 5 phòng suite thượng hạng. Lấy cảm hứng từ nét quyến rũ của loài hoa lan Đông Dương, du thuyền mang đến dịch vụ tinh tế, ẩm thực cao cấp và hải trình biệt lập thoát khỏi đám đông xô bồ.',
+    policies: [
+      'Bao gồm trọn gói thực đơn cao cấp (có tôm hùm), rượu vang chào mừng, vé tham quan và hoạt động trải nghiệm',
+      'Phòng nghỉ trang bị bồn tắm ngâm thảo mộc view biển',
+    ],
+    faqs: [
+      { question: 'Orchid Premium có bao nhiêu phòng nghỉ?', answer: 'Du thuyền chỉ có đúng 5 phòng Suite cao cấp, mang lại không gian yên tĩnh và riêng tư tối đa.' },
+    ],
+    specifications: { launchedYear: 2021, cabinCount: 5, hullMaterial: 'Thép cao cấp đóng mới', route: 'Tuần Châu · Vịnh Lan Hạ · Ba Trái Đào · Hang Sáng Tối' },
+  },
+];
+
+const cruiseFixtures = cruiseRawFixtures.map((cruise) => ({
   ...cruise,
-  gallery_images: toJson([cruise.image, COASTAL_IMAGE, DALAT_IMAGE]),
+  gallery_images: toJson(cruise.gallery_images),
   features: toJson(cruise.features),
   cabins: toJson(cruise.cabins),
   itinerary: toJson(cruise.itinerary),
-  description: `${cruise.name} mang đến hành trình nghỉ dưỡng giàu trải nghiệm tại ${cruise.destination}, với cabin tiện nghi, ẩm thực chọn lọc và lịch trình được Dibaoxa xác nhận rõ ràng.`,
-  policies: toJson(['Giá bao gồm cabin, bữa ăn và hoạt động trong lịch trình', 'Lịch trình có thể điều chỉnh theo thời tiết', 'Điều kiện hoàn hủy áp dụng theo hạng giá']),
-  faqs: toJson([{ question: 'Tôi cần có mặt tại bến trước bao lâu?', answer: 'Bạn nên có mặt trước giờ đón khoảng 30 phút.' }]),
-  specifications: toJson({}),
+  policies: toJson(cruise.policies),
+  faqs: toJson(cruise.faqs),
+  specifications: toJson(cruise.specifications),
   status: 'active',
 })).concat(serializeAmbassadorCruise());
+
 
 function getDemoPassword() {
   const configuredPassword = process.env.DEMO_PASSWORD?.trim();
@@ -337,8 +765,35 @@ const staffFixtures = [
 ];
 
 async function upsertFixtures(customerId) {
+  const departureDates = getAmbassadorDepartureDates({ count: 10, intervalDays: 4 });
+
   for (const cruise of cruiseFixtures) {
     await prisma.cruise.upsert({ where: { id: cruise.id }, update: cruise, create: cruise });
+
+    const cabins = JSON.parse(cruise.cabins || '[]');
+    const inventory = JSON.stringify(
+      cabins.map((cabinName, idx) => ({
+        cabin_name: cabinName,
+        total_units: idx === 0 ? 12 : 6,
+        price_override: idx === 0 ? cruise.price : cruise.price + idx * 450000,
+      }))
+    );
+
+    for (const departureDate of departureDates) {
+      const departureData = {
+        cruise_id: cruise.id,
+        departure_date: departureDate,
+        departure_time: '11:30',
+        status: 'open',
+        inventory,
+        notes: `Lịch khởi hành định kỳ của ${cruise.name}`,
+      };
+      await prisma.cruiseDeparture.upsert({
+        where: { cruise_id_departure_date: { cruise_id: cruise.id, departure_date: departureDate } },
+        update: departureData,
+        create: departureData,
+      });
+    }
   }
 
   for (const hotel of hotelFixtures) {

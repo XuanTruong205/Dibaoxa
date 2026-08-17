@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Clock3, CreditCard, Mail, Phone, ShieldCheck, UserRound, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, Copy, LoaderCircle, Mail, Phone, ShieldCheck, UserRound, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../services/api';
@@ -30,7 +30,7 @@ function buildOrderPayload(selection, traveler, requestId) {
       phone: traveler.phone.trim(),
       note: traveler.note.trim(),
     },
-    payment_method: 'Demo',
+    payment_method: 'VietQR',
   };
   if (selection.type === 'flight') {
     if (!selection.item?.quoteToken) throw new Error('Báo giá chuyến bay chưa sẵn sàng. Vui lòng tìm lại chuyến bay.');
@@ -104,6 +104,27 @@ export default function TravelOrderDialog({ selection, onClose, onViewPlans, onL
     return () => window.clearInterval(timer);
   }, [stage, order?.payment_expires_at]);
 
+  useEffect(() => {
+    const reference = order?.payment_qr?.transaction_ref;
+    if (stage !== 'payment' || !reference) return undefined;
+    let stopped = false;
+    const checkStatus = async () => {
+      try {
+        const response = await api.get(`/payments/status/${encodeURIComponent(reference)}`);
+        if (!stopped && response.data.data?.status === 'completed') {
+          setOrder(response.data.data.data);
+          await refreshProfile();
+          setStage('success');
+        }
+      } catch {
+        // A temporary polling error must not change the server-side payment state.
+      }
+    };
+    checkStatus();
+    const timer = window.setInterval(checkStatus, 3000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [stage, order?.payment_qr?.transaction_ref, refreshProfile]);
+
   if (!selection) return null;
 
   const updateField = (field, value) => setForm((current) => ({ ...current, [field]: value }));
@@ -135,21 +156,7 @@ export default function TravelOrderDialog({ selection, onClose, onViewPlans, onL
     }
   };
 
-  const confirmPayment = async () => {
-    if (!order || timeLeft <= 0) return;
-    setSubmitting(true);
-    setMessage('');
-    try {
-      const response = await api.post(`/travel-orders/${order.id}/demo-confirm`);
-      setOrder(response.data.data);
-      await refreshProfile();
-      setStage('success');
-    } catch (error) {
-      setMessage(error.message || 'Thanh toán chưa hoàn tất. Vui lòng thử lại.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const copy = (value) => navigator.clipboard?.writeText(String(value || ''));
 
   return (
     <AnimatePresence>
@@ -193,10 +200,18 @@ export default function TravelOrderDialog({ selection, onClose, onViewPlans, onL
               <div className="travel-dialog__heading"><span>Đơn chờ thanh toán</span><h2 id="travel-order-title">Kiểm tra và thanh toán</h2><p>Mã đơn {order.order_code}</p></div>
               <div className="travel-order-payment__timer" data-expired={timeLeft <= 0}><Clock3 /><span>Thời gian còn lại</span><strong>{formatTime(timeLeft)}</strong></div>
               <div className="travel-order-receipt"><div><span>Dịch vụ</span><strong>{order.title}</strong></div><div><span>Số lượng tính giá</span><strong>{order.quantity}</strong></div><div><span>Đơn giá</span><strong>{money(order.unit_price)}</strong></div><div className="is-total"><span>Tổng thanh toán</span><strong>{money(order.total_price)}</strong></div></div>
-              <button type="button" className="travel-order-method is-selected"><ShieldCheck /><span><strong>Thanh toán Demo</strong><small>Không phát sinh giao dịch ngân hàng thật</small></span><CheckCircle2 /></button>
+              {order.payment_qr && <div className="travel-order-qr">
+                <img src={order.payment_qr.qr_image_url} alt="Mã VietQR thanh toán đơn dịch vụ" />
+                <div>
+                  <strong>{order.payment_qr.bank_name} · {order.payment_qr.account_name}</strong>
+                  {[['Số tài khoản', order.payment_qr.account_number], ['Số tiền', money(order.payment_qr.amount)], ['Nội dung', order.payment_qr.transfer_content]].map(([label, value]) => <button key={label} type="button" onClick={() => copy(value)}><span>{label}</span><b>{value}</b><Copy /></button>)}
+                  <p><LoaderCircle className="animate-spin" /> Đang chờ ngân hàng xác nhận tự động…</p>
+                </div>
+              </div>}
+              {!order.payment_qr?.auto_confirmation && <p className="form-error" role="alert">Webhook SePay chưa có khóa bí mật nên chưa thể xác nhận tự động.</p>}
               {message && <p className="form-error" role="alert">{message}</p>}
               {timeLeft <= 0 && <p className="form-error" role="alert">Phiên thanh toán đã hết hạn. Hãy đóng và tạo lại đơn.</p>}
-              <div className="travel-order-actions"><button type="button" className="btn-secondary" onClick={() => setStage('details')} disabled={submitting}>Quay lại</button><button type="button" className="btn-primary" onClick={confirmPayment} disabled={submitting || timeLeft <= 0}><CreditCard /> {submitting ? 'Đang xử lý...' : `Thanh toán ${money(order.total_price)}`}</button></div>
+              <div className="travel-order-actions"><button type="button" className="btn-secondary" onClick={onClose}>Đóng</button><span className="text-sm text-slate-500">Quét QR bằng ứng dụng ngân hàng và giữ nguyên nội dung chuyển khoản.</span></div>
             </div>
           )}
 

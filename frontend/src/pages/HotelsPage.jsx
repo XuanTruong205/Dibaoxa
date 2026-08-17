@@ -23,7 +23,7 @@ import {
   getDateFromToday,
   useFavoriteIds,
 } from '../components/travel/TravelSearchUI';
-import api from '../services/api';
+import { cachedGet } from '../services/api';
 
 const TODAY = getDateFromToday(0);
 const PAGE_SIZE = 5;
@@ -121,7 +121,7 @@ export default function HotelsPage({ onSelectHotel, initialCity = '' }) {
       if (search.city !== 'all') params.city = search.city;
       const normalizedKeyword = normalizeSearchText(search.keyword);
       if (normalizedKeyword) params.search = normalizedKeyword;
-      const response = await api.get('/hotels', { params });
+      const response = await cachedGet('/hotels', { params });
       setHotels(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
       setHotels([]);
