@@ -8,6 +8,7 @@ import {
   Grid,
   LogOut,
   Menu,
+  MessageSquareText,
   Plane,
   Search,
   ShieldCheck,
@@ -19,10 +20,11 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAdminStore } from '../../store/useAdminStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
 
 const toSearchText = (...values) => values.filter(Boolean).join(' ').toLocaleLowerCase('vi');
 
-const indexAdminRecords = ({ bookings, travelOrders, hotels, cruises, payments, customers, staff, packages }) => [
+const indexAdminRecords = ({ bookings, travelOrders, hotels, cruises, payments, customers, staff, packages, contactInquiries }) => [
   ...bookings.map((item) => ({
     id: `booking-${item.id}`,
     nav: 'bookings',
@@ -87,11 +89,20 @@ const indexAdminRecords = ({ bookings, travelOrders, hotels, cruises, payments, 
     subtitle: [item.destination, item.duration].filter(Boolean).join(' - '),
     haystack: toSearchText(item.title, item.destination, item.duration, item.included),
   })),
+  ...contactInquiries.map((item) => ({
+    id: `contact-${item.id}`,
+    nav: 'contacts',
+    group: 'Yêu cầu liên hệ',
+    title: item.name,
+    subtitle: [item.service, item.status].filter(Boolean).join(' - '),
+    haystack: toSearchText(item.name, item.email, item.phone, item.service, item.message, item.status),
+  })),
 ].filter((item) => item.title);
 
 export default function AdminLayout({ activeNav, setActiveNav, onLogout, children }) {
   const { user, logout } = useAuthStore();
-  const { bookings, travelOrders, hotels, cruises, payments, customers, staff, packages, error } = useAdminStore();
+  const { bookings, travelOrders, hotels, cruises, payments, customers, staff, packages, contactInquiries, error } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -100,8 +111,8 @@ export default function AdminLayout({ activeNav, setActiveNav, onLogout, childre
   const notificationsRef = useRef(null);
 
   const searchIndex = useMemo(
-    () => indexAdminRecords({ bookings, travelOrders, hotels, cruises, payments, customers, staff, packages }),
-    [bookings, travelOrders, hotels, cruises, payments, customers, staff, packages],
+    () => indexAdminRecords({ bookings, travelOrders, hotels, cruises, payments, customers, staff, packages, contactInquiries }),
+    [bookings, travelOrders, hotels, cruises, payments, customers, staff, packages, contactInquiries],
   );
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase('vi');
   const searchResults = normalizedQuery
@@ -179,6 +190,7 @@ export default function AdminLayout({ activeNav, setActiveNav, onLogout, childre
     { id: 'cruises', label: 'Du Thuyền & Hải Trình', icon: Ship },
     { id: 'payments', label: 'Thanh Toán & Giao Dịch', icon: CreditCard },
     { id: 'reports', label: 'Báo Cáo & Phân Tích', icon: TrendingUp },
+    { id: 'contacts', label: 'Yêu Cầu Liên Hệ', icon: MessageSquareText },
   ].filter((item) => !item.adminOnly || user?.role === 'admin');
 
   const adminName = user?.full_name || 'Trần Thị Thu Hà';
@@ -187,6 +199,7 @@ export default function AdminLayout({ activeNav, setActiveNav, onLogout, childre
 
   const handleLogout = () => {
     logout();
+    notifySuccess('Đã đăng xuất', 'Phiên quản trị đã được đóng an toàn.');
     if (onLogout) {
       onLogout();
     }

@@ -4,10 +4,12 @@ import PaymentQRModal from '../components/booking/PaymentQRModal';
 import api from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
 import { useBookingStore } from '../store/useBookingStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 export default function BookingPage({ onBack, onSuccess }) {
   const { user, refreshProfile } = useAuthStore();
   const { activeHold, selectedServices, setSelectedServices, clearActiveHold } = useBookingStore();
+  const notifyError = useNotificationStore((state) => state.error);
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -116,7 +118,7 @@ export default function BookingPage({ onBack, onSuccess }) {
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      alert(error.message || 'Thanh toán thất bại. Vui lòng thử lại.');
+      notifyError('Không thể khởi tạo thanh toán', error.message || 'Vui lòng thử lại.');
     }
   };
 

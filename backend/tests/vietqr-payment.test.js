@@ -15,8 +15,8 @@ beforeAll(() => {
   for (const key of ['VIETQR_BANK_ID', 'VIETQR_ACCOUNT_NO', 'VIETQR_ACCOUNT_NAME', 'SEPAY_WEBHOOK_API_KEY']) previous[key] = ENV[key];
   Object.assign(ENV, {
     VIETQR_BANK_ID: 'MB',
-    VIETQR_ACCOUNT_NO: '0099999999678',
-    VIETQR_ACCOUNT_NAME: 'LAM XUAN TRUONG',
+    VIETQR_ACCOUNT_NO: '0000000000000',
+    VIETQR_ACCOUNT_NAME: 'TEST USER',
     SEPAY_WEBHOOK_API_KEY: 'test-webhook-secret',
   });
 });
@@ -37,7 +37,7 @@ describe('VietQR and SePay payment plumbing', () => {
   it('builds a dynamic MB VietQR URL with exact amount and reference', () => {
     const url = new URL(buildVietQrImageUrl({ amount: 3_850_000, transactionRef: 'DBXABC123' }));
     expect(url.hostname).toBe('img.vietqr.io');
-    expect(url.pathname).toContain('/MB-0099999999678-compact2.png');
+    expect(url.pathname).toContain('/MB-0000000000000-compact2.png');
     expect(url.searchParams.get('amount')).toBe('3850000');
     expect(url.searchParams.get('addInfo')).toBe('DBXABC123');
   });
@@ -87,7 +87,7 @@ describe('VietQR and SePay payment plumbing', () => {
       id: webhookId,
       gateway: 'MBBank',
       transactionDate: '2026-08-14 12:00:00',
-      accountNumber: '0099999999678',
+      accountNumber: '0000000000000',
       code: 'DBXDOESNOTEXIST',
       content: 'DBXDOESNOTEXIST',
       transferType: 'in',
@@ -130,7 +130,7 @@ describe('VietQR and SePay payment plumbing', () => {
       id: successWebhookId,
       gateway: 'MBBank',
       transactionDate: '2026-08-14 12:00:00',
-      accountNumber: '0099999999678',
+      accountNumber: '0000000000000',
       code: 'DBXTESTSUCCESS',
       content: 'DBXTESTSUCCESS',
       transferType: 'in',

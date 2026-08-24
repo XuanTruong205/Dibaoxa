@@ -15,10 +15,12 @@ import {
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import AmenityPicker from './AmenityPicker';
 
 export default function EditHotelModal({ isOpen, onClose, hotelToEdit, onSuccess }) {
   const { updateHotel } = useAdminStore();
+  const notifyError = useNotificationStore((state) => state.error);
 
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('Đà Nẵng');
@@ -173,7 +175,7 @@ export default function EditHotelModal({ isOpen, onClose, hotelToEdit, onSuccess
 
   const handleRemoveRoom = (roomIndex) => {
     if (rooms.length === 1) {
-      alert('Khách sạn phải có ít nhất 1 loại phòng!');
+      notifyError('Thiếu loại phòng', 'Khách sạn phải có ít nhất một loại phòng.');
       return;
     }
     setRooms(rooms.filter((_, i) => i !== roomIndex));
@@ -235,7 +237,7 @@ export default function EditHotelModal({ isOpen, onClose, hotelToEdit, onSuccess
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      alert(error.message || 'Không thể cập nhật khách sạn.');
+      notifyError('Không thể cập nhật khách sạn', error.message || 'Vui lòng kiểm tra dữ liệu và thử lại.');
     }
   };
 

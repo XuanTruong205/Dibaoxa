@@ -17,9 +17,12 @@ import {
 import React, { useState } from 'react';
 import CreateStaffModal from '../modals/CreateStaffModal';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 
 export default function AdminGuidesView() {
   const { staff: staffList, hotels, addStaff, updateStaff, deleteStaff } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const activeStaff = staffList.filter((staff) => staff.status === 'active').length;
@@ -37,14 +40,18 @@ export default function AdminGuidesView() {
         job_title: newStaff.role,
         phone: newStaff.phone,
         assigned_hotel: newStaff.assignedHotel,
+        photo_url: newStaff.photoUrl || undefined,
+        bio: newStaff.bio || undefined,
+        is_public: newStaff.isPublic,
+        display_order: newStaff.displayOrder,
         status: newStaff.status || 'active',
       };
       if (editingStaff) await updateStaff(editingStaff.id, payload);
       else await addStaff(payload);
-      alert(editingStaff ? `Đã cập nhật nhân viên [${newStaff.fullName}]!` : `Đã thêm thành công nhân viên [${newStaff.fullName}]!`);
+      notifySuccess(editingStaff ? 'Đã cập nhật nhân viên' : 'Đã thêm nhân viên', `${newStaff.fullName} đã được lưu vào danh sách nhân sự.`);
       setEditingStaff(null);
     } catch (error) {
-      alert(error.message || 'Không thể thêm nhân viên.');
+      notifyError('Không thể lưu nhân viên', error.message || 'Vui lòng kiểm tra dữ liệu và thử lại.');
       throw error;
     }
   };
@@ -53,8 +60,9 @@ export default function AdminGuidesView() {
     if (!window.confirm('Bạn có chắc muốn xóa nhân viên này?')) return;
     try {
       await deleteStaff(staffId);
+      notifySuccess('Đã xóa nhân viên', 'Hồ sơ nhân sự đã được gỡ khỏi danh sách.');
     } catch (error) {
-      alert(error.message || 'Không thể xóa nhân viên.');
+      notifyError('Không thể xóa nhân viên', error.message || 'Vui lòng thử lại.');
     }
   };
 
@@ -154,7 +162,12 @@ export default function AdminGuidesView() {
               <tbody className="divide-y divide-slate-100">
                 {staffList.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-2 font-bold text-slate-900">{s.fullName || s.full_name}</td>
+                    <td className="py-3 px-2 font-bold text-slate-900">
+                      <span className="flex items-center gap-2">
+                        {s.photo_url ? <img src={s.photo_url} alt="" className="h-9 w-9 rounded-xl object-cover" loading="lazy" /> : <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-500">{(s.fullName || s.full_name || '?').charAt(0)}</span>}
+                        <span>{s.fullName || s.full_name}{s.is_public && <small className="block text-[10px] font-semibold text-teal-700">Đang công khai</small>}</span>
+                      </span>
+                    </td>
                     <td className="py-3 px-2 text-indigo-700 font-bold">{s.role || s.job_title}</td>
                     <td className="py-3 px-2 text-slate-600 font-mono">{s.phone}</td>
                     <td className="py-3 px-2 text-slate-800 font-medium">{assignedHotelName(s)}</td>

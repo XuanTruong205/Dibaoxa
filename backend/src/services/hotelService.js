@@ -199,6 +199,23 @@ export async function getHotelDetail(hotelId) {
   };
 }
 
+export async function listFeaturedReviews(limit = 9) {
+  const reviews = await prisma.review.findMany({
+    where: { comment: { not: '' } },
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      created_at: true,
+      user: { select: { full_name: true } },
+      hotel: { select: { id: true, name: true, city: true, cover_image: true } },
+    },
+    orderBy: [{ rating: 'desc' }, { created_at: 'desc' }],
+    take: limit,
+  });
+  return reviews.filter((review) => review.comment.trim().length >= 10);
+}
+
 export async function getHotelRoomsWithRealtimeAvailability(hotelId, checkIn, checkOut) {
   validateOptionalStayRange(checkIn, checkOut);
   const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }, select: { id: true } });

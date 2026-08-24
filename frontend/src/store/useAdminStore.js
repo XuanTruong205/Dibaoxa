@@ -12,6 +12,7 @@ export const useAdminStore = create((set, get) => ({
   customers: [],
   staff: [],
   packages: [],
+  contactInquiries: [],
   reports: null,
   cruiseDepartures: [],
   loading: false,
@@ -28,6 +29,7 @@ export const useAdminStore = create((set, get) => ({
       ['staff', api.get('/admin/staff'), []],
       ['packages', api.get('/admin/packages'), []],
       ['reports', api.get('/admin/reports/occupancy'), null],
+      ['contactInquiries', api.get('/admin/contact-inquiries'), []],
     ];
     if (includeAdminOnly) requests.push(
       ['travelOrders', api.get('/admin/travel-orders'), []],
@@ -271,6 +273,17 @@ export const useAdminStore = create((set, get) => ({
   deleteStaff: async (staffId) => {
     await api.delete(`/admin/staff/${staffId}`);
     set((state) => ({ staff: state.staff.filter((member) => String(member.id) !== String(staffId)) }));
+  },
+
+  updateContactInquiryStatus: async (inquiryId, status) => {
+    const response = await api.patch(`/admin/contact-inquiries/${inquiryId}/status`, { status });
+    const inquiry = responseData(response, null);
+    if (inquiry) {
+      set((state) => ({
+        contactInquiries: state.contactInquiries.map((item) => item.id === inquiryId ? inquiry : item),
+      }));
+    }
+    return inquiry;
   },
 
   fetchPackages: async () => {

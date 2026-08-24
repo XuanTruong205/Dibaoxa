@@ -14,6 +14,8 @@ import hotelRoutes from './routes/hotelRoutes.js';
 import packageRoutes from './routes/packageRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import travelOrderRoutes from './routes/travelOrderRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use('/api/v1/cruises', cruiseRoutes);
 app.use('/api/v1/flights', flightRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/travel-orders', travelOrderRoutes);
+app.use('/api/v1/contact-inquiries', contactRoutes);
+app.use('/api/v1/team', teamRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // Health Check Endpoint

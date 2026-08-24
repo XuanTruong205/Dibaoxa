@@ -9,7 +9,6 @@ import {
   Search,
   Ship,
   Sparkles,
-  Star,
   UsersRound,
   WalletCards,
   Waves,
@@ -60,7 +59,6 @@ export default function CruisesPage({ onViewPlans, onSelectCruise, onLogin, init
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sort, setSort] = useState('recommended');
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [selection, setSelection] = useState(null);
   const [cruises, setCruises] = useState([]);
@@ -77,12 +75,6 @@ export default function CruisesPage({ onViewPlans, onSelectCruise, onLogin, init
       .finally(() => { if (active) setCatalogLoading(false); });
     return () => { active = false; };
   }, []);
-
-  useEffect(() => {
-    if (!loading) return undefined;
-    const timer = window.setTimeout(() => setLoading(false), 520);
-    return () => window.clearTimeout(timer);
-  }, [loading, search]);
 
   const destinations = useMemo(() => [...new Set([...CRUISE_DESTINATIONS, ...cruises.map((item) => item.destination)])], [cruises]);
 
@@ -110,8 +102,7 @@ export default function CruisesPage({ onViewPlans, onSelectCruise, onLogin, init
   const submitSearch = (event) => {
     event.preventDefault();
     setSearch({ ...draft });
-    setLoading(true);
-    window.setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }), 60);
+    window.requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
   };
 
   const resetAll = () => {
@@ -165,7 +156,7 @@ export default function CruisesPage({ onViewPlans, onSelectCruise, onLogin, init
           <CruiseFilters filters={filters} setFilters={setFilters} mobileOpen={mobileFilters} onClose={() => setMobileFilters(false)} onReset={() => setFilters(DEFAULT_FILTERS)} />
           <div className="travel-results-main">
             <ResultsToolbar count={results.length} sort={sort} onSort={setSort} onOpenFilters={() => setMobileFilters(true)} resultLabel="hải trình" />
-            {(loading || catalogLoading) ? <ResultsSkeleton variant="cruise" /> : results.length === 0 ? <EmptyResults title="Chưa có hải trình phù hợp" description="Hãy đổi từ khóa, địa điểm hoặc nới mức giá." onReset={resetAll} /> : (
+            {catalogLoading ? <ResultsSkeleton variant="cruise" /> : results.length === 0 ? <EmptyResults title="Chưa có hải trình phù hợp" description="Hãy đổi từ khóa, địa điểm hoặc nới mức giá." onReset={resetAll} /> : (
               <motion.div className="travel-results-list travel-results-list--cruise" layout={!reduceMotion}>
                 <AnimatePresence mode="popLayout">
                   {visibleResults.map((cruise) => (

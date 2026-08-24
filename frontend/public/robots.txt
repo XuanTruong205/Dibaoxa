@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dang-nhap
+Disallow: /dang-ky
+Disallow: /ho-so
+Disallow: /don-cua-toi
+Disallow: /cam-on
+
+Sitemap: https://dibaoxa.vn/sitemap.xml

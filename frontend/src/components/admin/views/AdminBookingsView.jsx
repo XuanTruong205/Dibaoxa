@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import {
   buildMonthCalendar,
   canCancelBooking,
@@ -24,6 +25,8 @@ import CreateBookingModal from '../modals/CreateBookingModal';
 
 export default function AdminBookingsView() {
   const { bookings, checkinQR, cancelBooking } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [qrCodeInput, setQrCodeInput] = useState('');
   const [checkinResult, setCheckinResult] = useState(null);
@@ -50,8 +53,10 @@ export default function AdminBookingsView() {
     const res = await checkinQR(qrCodeInput.trim());
     if (res.success) {
       setCheckinResult(res.booking);
+      notifySuccess('Check-in thành công', `${res.booking?.traveler_name || 'Khách hàng'} đã được ghi nhận đến.`);
     } else {
       setCheckinError(res.message);
+      notifyError('Không thể check-in', res.message || 'Mã QR không hợp lệ.');
     }
   };
 
@@ -61,9 +66,11 @@ export default function AdminBookingsView() {
     setCheckinError('');
     try {
       await cancelBooking(bookingToCancel.id);
+      notifySuccess('Đã hủy đơn đặt phòng', `Đơn ${bookingToCancel.booking_code || bookingToCancel.id} đã được cập nhật.`);
       setBookingToCancel(null);
     } catch (error) {
       setCheckinError(error.message || 'Không thể hủy đơn đặt phòng.');
+      notifyError('Không thể hủy đơn', error.message || 'Vui lòng thử lại.');
     } finally {
       setCancellingBookingId(null);
     }
@@ -310,7 +317,7 @@ export default function AdminBookingsView() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={(createdBooking) => {
           setQrCodeInput(createdBooking.booking_code);
-          alert(`Đã khởi tạo đơn đặt phòng [${createdBooking.booking_code}] cho khách hàng ${createdBooking.traveler_name}.`);
+          notifySuccess('Đã tạo đơn đặt phòng', `Đơn ${createdBooking.booking_code} cho ${createdBooking.traveler_name} đã được khởi tạo.`);
         }}
       />
 

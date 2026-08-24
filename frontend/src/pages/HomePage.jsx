@@ -21,27 +21,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CRUISE_DESTINATIONS } from '../data/travelCatalog';
 import { cachedGet } from '../services/api';
 
-const REVIEWS = [
-  {
-    title: 'Kỳ nghỉ gia đình tại Hạ Long',
-    body: 'Tư vấn rất rõ về cabin và lịch trình. Bố mẹ mình thích không gian yên tĩnh, các bé thì mê hoạt động kayak.',
-    name: 'Chị Ngọc Anh',
-    trip: 'Heritage Dawn Hạ Long',
-  },
-  {
-    title: 'Chuyến đi vừa đủ riêng tư',
-    body: 'Đội ngũ hỗ trợ phản hồi nhanh, nhắc giờ đón và chuẩn bị bữa ăn chay đúng yêu cầu của cả nhóm.',
-    name: 'Anh Quang Huy',
-    trip: 'Lan Hạ Serenity',
-  },
-  {
-    title: 'Lần đầu đi du thuyền rất dễ dàng',
-    body: 'Mọi thông tin từ cảng khởi hành đến hạng cabin đều có sẵn. Mình chỉ cần chọn và xác nhận lại.',
-    name: 'Bạn Minh Thư',
-    trip: 'Sapphire Passage',
-  },
-];
-
 const DESTINATIONS = [
   { name: 'Vịnh Hạ Long', description: 'Đảo đá vôi, hang động và những đêm yên trên vịnh.', image: '/images/dibaoxa-cruise-hero.png', value: 'Hạ Long' },
   { name: 'Vịnh Lan Hạ', description: 'Làn nước xanh, làng chài và hành trình gần đảo Cát Bà.', image: '/images/dibaoxa-discover-vietnam.webp', value: 'Lan Hạ' },
@@ -54,13 +33,12 @@ const ARTICLES = [
   { id: 3, category: 'Lưu trú', title: 'Kết hợp du thuyền và nghỉ dưỡng ven biển', excerpt: 'Gợi ý lịch trình nối liền khách sạn, chuyến bay và một đêm trên vịnh.', date: '25/07/2026', image: '/images/dibaoxa-coastal-resort.webp' },
 ];
 
-const PARTNERS = [
-  { name: 'Heritage Fleet', Icon: Ship },
-  { name: 'Northern Sails', Icon: Compass },
-  { name: 'Emerald Passage', Icon: Star },
-  { name: 'Coastal Journey', Icon: Ship },
-  { name: 'Island Passage', Icon: Compass },
-  { name: 'Southern River', Icon: Star },
+const FAQS = [
+  ['Tôi có thể đặt những dịch vụ nào trên Dibaoxa?', 'Bạn có thể tìm khách sạn, du thuyền, vé máy bay nội địa và gửi yêu cầu hành trình cho doanh nghiệp.'],
+  ['Giá hiển thị đã gồm các khoản nào?', 'Mỗi sản phẩm hiển thị giá và quyền lợi đi kèm. Chi tiết cuối cùng được xác nhận lại trước khi bạn thanh toán.'],
+  ['Sau khi thanh toán tôi theo dõi đơn ở đâu?', 'Đăng nhập và mở mục Đơn của tôi để xem trạng thái thanh toán, lịch trình và thông tin liên quan.'],
+  ['Tôi có thể yêu cầu tư vấn riêng không?', 'Có. Hãy gửi form liên hệ với ngày đi, số khách và nhu cầu. Mục tiêu phản hồi là trong 30 phút từ 08:00 đến 22:00.'],
+  ['Dibaoxa bảo vệ dữ liệu cá nhân thế nào?', 'Chúng tôi chỉ thu thập dữ liệu cần cho việc cung cấp dịch vụ và áp dụng kiểm soát truy cập phù hợp. Bạn có thể xem chi tiết tại Chính sách bảo mật.'],
 ];
 
 function SectionHeading({ title, description, centered = false }) {
@@ -110,6 +88,7 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
   const [destination, setDestination] = useState('all');
   const [budget, setBudget] = useState('all');
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviews, setReviews] = useState([]);
   const [cruises, setCruises] = useState([]);
   const [videoReady, setVideoReady] = useState(false);
 
@@ -126,9 +105,11 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
 
   useEffect(() => {
     let active = true;
-    cachedGet('/cruises').then((response) => {
-      if (active && Array.isArray(response?.data?.data)) setCruises(response.data.data);
-    }).catch(() => { if (active) setCruises([]); });
+    Promise.allSettled([cachedGet('/cruises'), cachedGet('/hotels/featured-reviews', { params: { limit: 9 } })]).then(([cruiseResult, reviewResult]) => {
+      if (!active) return;
+      setCruises(cruiseResult.status === 'fulfilled' && Array.isArray(cruiseResult.value?.data?.data) ? cruiseResult.value.data.data : []);
+      setReviews(reviewResult.status === 'fulfilled' && Array.isArray(reviewResult.value?.data?.data) ? reviewResult.value.data.data : []);
+    });
     return () => { active = false; };
   }, []);
 
@@ -148,7 +129,8 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
     onSearchCruises?.({ destination });
   };
 
-  const currentReview = REVIEWS[reviewIndex];
+  const currentReview = reviews[reviewIndex];
+  const operators = useMemo(() => [...new Set(cruises.map((cruise) => cruise.operator).filter(Boolean))].slice(0, 8), [cruises]);
 
   return (
     <div className="mixi-home-page">
@@ -198,21 +180,21 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
         <div className="mixi-home-action"><button type="button" className="btn-secondary" onClick={() => onNavigate?.('cruises')}>Xem tất cả du thuyền <ArrowRight /></button></div>
       </section>
 
-      <section className="mixi-review-section" aria-labelledby="review-title">
+      {currentReview && <section className="mixi-review-section" aria-labelledby="review-title">
         <div className="mixi-home-section">
           <SectionHeading title="Đánh giá từ người đã trải nghiệm" description="Những chia sẻ sau chuyến đi được đội ngũ Dibaoxa ghi nhận." />
           <div className="mixi-review-layout">
             <div className="mixi-review-image"><img src="/images/dibaoxa-discover-vietnam.webp" alt="Khung cảnh Việt Nam trong hành trình nghỉ dưỡng" loading="lazy" /></div>
             <motion.blockquote key={reviewIndex} initial={reduceMotion ? false : { opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.32 }}>
               <Quote />
-              <h3>{currentReview.title}</h3>
-              <p>“{currentReview.body}”</p>
-              <footer><strong>{currentReview.name}</strong><span>{currentReview.trip}</span></footer>
-              <div className="mixi-review-controls"><button type="button" onClick={() => setReviewIndex((reviewIndex - 1 + REVIEWS.length) % REVIEWS.length)} aria-label="Đánh giá trước"><ChevronLeft /></button><span>{reviewIndex + 1} / {REVIEWS.length}</span><button type="button" onClick={() => setReviewIndex((reviewIndex + 1) % REVIEWS.length)} aria-label="Đánh giá tiếp theo"><ChevronRight /></button></div>
+              <h3>{currentReview.hotel?.name || 'Trải nghiệm lưu trú'}</h3>
+              <p>“{currentReview.comment}”</p>
+              <footer><strong>{currentReview.user?.full_name || 'Khách hàng Dibaoxa'}</strong><span>{currentReview.hotel?.city}</span></footer>
+              <div className="mixi-review-controls"><button type="button" onClick={() => setReviewIndex((reviewIndex - 1 + reviews.length) % reviews.length)} aria-label="Đánh giá trước"><ChevronLeft /></button><span>{reviewIndex + 1} / {reviews.length}</span><button type="button" onClick={() => setReviewIndex((reviewIndex + 1) % reviews.length)} aria-label="Đánh giá tiếp theo"><ChevronRight /></button></div>
             </motion.blockquote>
           </div>
         </div>
-      </section>
+      </section>}
 
       <section className="mixi-home-section" aria-labelledby="destinations-title">
         <SectionHeading title="Các điểm đến của Dibaoxa" description="Mỗi vùng vịnh có một nhịp trải nghiệm khác nhau." centered />
@@ -226,11 +208,17 @@ export default function HomePage({ onNavigate, onSelectCruise, onSearchCruises }
         </div>
       </section>
 
-      <section className="mixi-partner-section" aria-labelledby="partners-title">
+      {operators.length > 0 && <section className="mixi-partner-section" aria-labelledby="partners-title">
         <div className="mixi-home-section">
           <SectionHeading title="Đồng hành cùng đơn vị vận hành uy tín" description="Danh mục được tổng hợp từ các đối tác có thông tin hành trình rõ ràng." centered />
-          <div className="mixi-partner-list">{PARTNERS.map(({ name, Icon }) => <div key={name} title={name} aria-label={name}><Icon /><span>{name}</span></div>)}</div>
+          <div className="mixi-partner-list">{operators.map((name, index) => { const Icon = index % 2 ? Compass : Ship; return <div key={name} title={name} aria-label={name}><Icon /><span>{name}</span></div>; })}</div>
         </div>
+      </section>}
+
+      <section className="mixi-home-section home-faq" aria-labelledby="home-faq-title">
+        <SectionHeading title="Câu hỏi thường gặp" description="Thông tin cần biết trước khi đặt dịch vụ cùng Dibaoxa." />
+        <div className="home-faq__list">{FAQS.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
+        <div className="mixi-home-action"><button type="button" className="btn-secondary" onClick={() => onNavigate?.('privacy')}>Xem chính sách bảo mật <ArrowRight /></button></div>
       </section>
 
       <section className="mixi-home-section" aria-labelledby="blog-title">

@@ -20,6 +20,7 @@ import RoomDetailModal from '../components/hotel/RoomDetailModal';
 import api from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
 import { useBookingStore } from '../store/useBookingStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const getLocalDate = (days = 0) => {
   const date = new Date();
@@ -29,9 +30,11 @@ const getLocalDate = (days = 0) => {
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`;
 
-export default function HotelDetailPage({ hotelId, initialCheckIn, initialCheckOut, onBack, onProceedBooking, onRequireLogin }) {
+export default function HotelDetailPage({ hotelId, initialCheckIn, initialCheckOut, onBack, onProceedBooking, onRequireLogin, onSeoChange }) {
   const { isAuthenticated } = useAuthStore();
   const { holdRoom } = useBookingStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [hotel, setHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,15 @@ export default function HotelDetailPage({ hotelId, initialCheckIn, initialCheckO
   }, [hotelId, checkIn, checkOut]);
 
   useEffect(() => {
+    if (!hotel) return;
+    onSeoChange?.({
+      name: hotel.name,
+      description: hotel.description || `Xem phòng, tiện ích và tình trạng lưu trú tại ${hotel.name}.`,
+      image: hotel.cover_image || hotel.gallery_images?.[0],
+    });
+  }, [hotel, onSeoChange]);
+
+  useEffect(() => {
     const socket = io({ path: '/socket.io' });
     socket.on('connect', () => socket.emit('join_room_channel', hotelId));
     const refreshAvailability = async () => {
@@ -108,8 +120,10 @@ export default function HotelDetailPage({ hotelId, initialCheckIn, initialCheckO
     });
     setHoldingRoomId(null);
     setSelectedDetailRoom(null);
-    if (result.success) onProceedBooking();
-    else alert(result.message || 'Không thể khóa giữ phòng.');
+    if (result.success) {
+      notifySuccess('Đã giữ phòng trong 10 phút', 'Hoàn tất thông tin khách lưu trú trước khi thời gian giữ phòng kết thúc.');
+      onProceedBooking();
+    } else notifyError('Không thể giữ phòng', result.message || 'Vui lòng chọn lại phòng hoặc ngày lưu trú.');
   };
 
   const openLightbox = (images, initialIndex = 0, title = '') => {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as adminController from '../controllers/adminController.js';
 import * as cruiseDepartureController from '../controllers/cruiseDepartureController.js';
+import * as contactController from '../controllers/contactController.js';
 import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
 import { adminRateLimiter } from '../middlewares/securityMiddleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validateMiddleware.js';
@@ -176,14 +177,24 @@ const packageSchema = z.object({
 const staffSchema = z.object({
   full_name: z.string().trim().min(2).max(100), email: z.string().trim().email().optional(),
   job_title: z.string().trim().min(2).max(100), phone: z.string().trim().min(8).max(30),
-  assigned_hotel: z.string().trim().min(1).max(200), status: z.enum(['active', 'inactive']).default('active'),
-}).strict();
+  assigned_hotel: z.string().trim().min(1).max(200),
+  photo_url: z.string().trim().max(1000).refine((value) => /^(https?:\/\/|\/)/i.test(value), 'Ảnh phải là URL http(s) hoặc đường dẫn bắt đầu bằng /').optional(),
+  bio: z.string().trim().max(500).optional(),
+  is_public: z.boolean().default(false),
+  display_order: z.number().int().min(0).max(10_000).default(0),
+  status: z.enum(['active', 'inactive']).default('active'),
+}).strict().refine((value) => !value.is_public || Boolean(value.photo_url), {
+  path: ['photo_url'],
+  message: 'Hồ sơ công khai cần có ảnh chân dung đã được đồng ý sử dụng',
+});
 const reportQuery = z.object({
   check_in: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   check_out: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).strict().refine((value) => (value.check_in && value.check_out) || (!value.check_in && !value.check_out), {
   message: 'Phải truyền đồng thời check_in và check_out',
 });
+const contactListQuery = listQuery.extend({ status: z.enum(['new', 'in_progress', 'resolved']).optional() });
+const contactStatusSchema = z.object({ status: z.enum(['new', 'in_progress', 'resolved']) }).strict();
 
 const departureSchema = z.object({
   cruise_id: entityId,
@@ -217,6 +228,8 @@ router.get('/travel-orders', adminOnly, validateQuery(listQuery), adminControlle
 router.post('/travel-orders/:id/confirm', adminOnly, validateParams(uuidParams), adminController.confirmTravelOrder);
 router.post('/travel-orders/:id/cancel', adminOnly, validateParams(uuidParams), adminController.cancelTravelOrder);
 router.get('/payments', operations, validateQuery(listQuery), adminController.getPayments);
+router.get('/contact-inquiries', operations, validateQuery(contactListQuery), contactController.listInquiries);
+router.patch('/contact-inquiries/:id/status', operations, validateParams(uuidParams), validateBody(contactStatusSchema), contactController.updateInquiryStatus);
 
 router.get('/users', operations, validateQuery(userListQuery), adminController.getUsers);
 router.post('/users', adminOnly, validateBody(userSchema), adminController.createUser);

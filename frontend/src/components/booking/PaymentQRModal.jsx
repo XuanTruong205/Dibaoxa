@@ -1,16 +1,27 @@
 import { CheckCircle2, Clock, Copy, LoaderCircle, ShieldCheck, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useNotificationStore } from '../../store/useNotificationStore';
+import { copyTextToClipboard } from '../../utils/clipboard';
 
 export default function PaymentQRModal({ holdData, grandTotal, selectedServices, paymentData, onConfirm, onClose, loading }) {
   const [timeLeft, setTimeLeft] = useState(() => Math.max(0, Math.ceil((new Date(holdData?.expires_at).getTime() - Date.now()) / 1000)));
   const qr = paymentData?.payment_qr;
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
 
   useEffect(() => {
     const timer = window.setInterval(() => setTimeLeft(Math.max(0, Math.ceil((new Date(holdData?.expires_at).getTime() - Date.now()) / 1000))), 1000);
     return () => window.clearInterval(timer);
   }, [holdData?.expires_at]);
 
-  const copy = (value) => navigator.clipboard?.writeText(String(value || ''));
+  const copy = async (label, value) => {
+    try {
+      await copyTextToClipboard(value);
+      notifySuccess(`Đã sao chép ${label.toLocaleLowerCase('vi')}`, `${label} đã được lưu vào bộ nhớ tạm.`);
+    } catch (error) {
+      notifyError('Không thể sao chép', error.message || 'Vui lòng chọn và sao chép nội dung thủ công.');
+    }
+  };
   const servicesTotal = selectedServices?.reduce((sum, service) => sum + service.price * service.quantity, 0) || 0;
   const formatTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
@@ -34,8 +45,8 @@ export default function PaymentQRModal({ holdData, grandTotal, selectedServices,
           <div className="mt-5 text-center">
             <img src={qr.qr_image_url} alt="Mã VietQR thanh toán đơn phòng" className="w-64 max-w-full mx-auto rounded-2xl border border-slate-200 shadow-sm" />
             <div className="mt-4 grid gap-2 text-left text-sm">
-              {[['Ngân hàng', qr.bank_name], ['Số tài khoản', qr.account_number], ['Chủ tài khoản', qr.account_name], ['Số tiền', `${Number(qr.amount).toLocaleString('vi-VN')} đ`], ['Nội dung', qr.transfer_content]].map(([label, value]) => (
-                <button key={label} type="button" onClick={() => copy(value)} className="flex justify-between items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"><span className="text-slate-500">{label}</span><strong className="text-slate-900 break-all">{value}</strong><Copy className="w-4 h-4 text-teal-700 shrink-0" /></button>
+              {[['Ngân hàng', qr.bank_name], ['Số tài khoản', qr.account_number], ['Chủ tài khoản', qr.account_name], ['Số tiền', `${Number(qr.amount).toLocaleString('vi-VN')} đ`], ['Nội dung chuyển khoản', qr.transfer_content]].map(([label, value]) => (
+                <button key={label} type="button" onClick={() => copy(label, value)} aria-label={`Sao chép ${label.toLocaleLowerCase('vi')}`} className="flex justify-between items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"><span className="text-slate-500">{label}</span><strong className="text-slate-900 break-all">{value}</strong><Copy className="w-4 h-4 text-teal-700 shrink-0" /></button>
               ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm font-semibold text-emerald-800"><LoaderCircle className="w-4 h-4 animate-spin" />Đang chờ ngân hàng xác nhận tự động…</div>

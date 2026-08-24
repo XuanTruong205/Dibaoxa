@@ -14,9 +14,12 @@ import {
 import React, { useState } from 'react';
 import CreatePackageModal from '../modals/CreatePackageModal';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 
 export default function AdminPackagesView() {
   const { packages, addPackage, updatePackage, deletePackage } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const activePackages = packages.filter((pkg) => pkg.status === 'active').length;
@@ -26,10 +29,10 @@ export default function AdminPackagesView() {
       const saved = editingPackage
         ? await updatePackage(editingPackage.id, newPkg)
         : await addPackage(newPkg);
-      alert(editingPackage ? `Đã cập nhật gói [${saved?.title || newPkg.title}]!` : `Đã tạo thành công gói tour [${saved?.title || newPkg.title}]!`);
+      notifySuccess(editingPackage ? 'Đã cập nhật gói du lịch' : 'Đã tạo gói du lịch', `${saved?.title || newPkg.title} đã được lưu.`);
       setEditingPackage(null);
     } catch (error) {
-      alert(error.message || 'Không thể tạo gói tour.');
+      notifyError('Không thể lưu gói du lịch', error.message || 'Vui lòng kiểm tra dữ liệu và thử lại.');
       throw error;
     }
   };
@@ -38,8 +41,9 @@ export default function AdminPackagesView() {
     if (!window.confirm('Bạn có chắc muốn xóa gói du lịch này?')) return;
     try {
       await deletePackage(packageId);
+      notifySuccess('Đã xóa gói du lịch', 'Gói đã được gỡ khỏi danh mục.');
     } catch (error) {
-      alert(error.message || 'Không thể xóa gói tour.');
+      notifyError('Không thể xóa gói du lịch', error.message || 'Vui lòng thử lại.');
     }
   };
 

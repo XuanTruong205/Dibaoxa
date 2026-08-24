@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const tierDetails = {
   silver: { label: 'Silver', next: 'Gold', threshold: 5000, accent: 'profile-tier--silver' },
@@ -12,6 +13,8 @@ const tierDetails = {
 
 export default function ProfilePage({ onLogin, onViewBookings, onExplore }) {
   const { user, isAuthenticated, updateProfile } = useAuthStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const reduceMotion = useReducedMotion();
   const [bookings, setBookings] = useState([]);
   const [fullName, setFullName] = useState(user?.full_name || '');
@@ -60,6 +63,8 @@ export default function ProfilePage({ onLogin, onViewBookings, onExplore }) {
     setFeedback({ type: '', message: '' });
     const result = await updateProfile({ full_name: fullName.trim(), phone: phone.trim() });
     setSaving(false);
+    if (result.success) notifySuccess('Đã cập nhật hồ sơ', 'Thông tin cá nhân của bạn đã được lưu.');
+    else notifyError('Không thể cập nhật hồ sơ', result.message || 'Vui lòng thử lại.');
     setFeedback(result.success
       ? { type: 'success', message: 'Thông tin cá nhân đã được cập nhật.' }
       : { type: 'error', message: result.message || 'Không thể cập nhật hồ sơ.' });

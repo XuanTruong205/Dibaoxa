@@ -1,13 +1,15 @@
 import { gzipSync } from 'node:zlib';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const assetsDir = new URL('../dist/assets/', import.meta.url);
+const distDir = process.env.PERF_DIST_DIR || 'dist';
+const assetsDir = fileURLToPath(new URL(`../${distDir}/assets/`, import.meta.url));
 const files = readdirSync(assetsDir);
 const entryName = files.find((name) => /^index-[\w-]+\.js$/.test(name));
 if (!entryName) throw new Error('Không tìm thấy JavaScript entry trong dist. Hãy chạy npm run build trước.');
 
-const entryPath = join(assetsDir.pathname.slice(1), entryName);
+const entryPath = join(assetsDir, entryName);
 const gzipBytes = gzipSync(readFileSync(entryPath)).length;
 const budgetBytes = 80 * 1024;
 const kb = (value) => (value / 1024).toFixed(1);

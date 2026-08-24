@@ -2,6 +2,7 @@ import { Calendar, CheckCircle2, ChevronDown, Coins, CreditCard, Hotel, MapPin, 
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const paymentStatusLabel = {
   completed: 'Đã thanh toán',
@@ -62,6 +63,8 @@ function TravelOrders({ orders, onCancel }) {
 
 export default function MyBookingsPage({ onExplore, onLogin, onNavigate }) {
   const { isAuthenticated } = useAuthStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [bookings, setBookings] = useState([]);
   const [travelOrders, setTravelOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,10 +102,10 @@ export default function MyBookingsPage({ onExplore, onLogin, onNavigate }) {
     if (!window.confirm('Bạn có chắc chắn muốn hủy đơn đặt phòng này?')) return;
     try {
       await api.post(`/bookings/cancel/${bookingId}`);
-      alert('Đã hủy đơn đặt phòng thành công.');
+      notifySuccess('Đã hủy đơn đặt phòng', 'Trạng thái đơn và thanh toán đã được cập nhật.');
       fetchBookings();
     } catch (error) {
-      alert(error.message || 'Không thể hủy đơn đặt phòng.');
+      notifyError('Không thể hủy đơn', error.message || 'Vui lòng thử lại sau.');
     }
   };
 
@@ -110,10 +113,10 @@ export default function MyBookingsPage({ onExplore, onLogin, onNavigate }) {
     if (!window.confirm(`Bạn có chắc muốn hủy đơn ${order.order_code}?`)) return;
     try {
       await api.post(`/travel-orders/${order.id}/cancel`);
-      alert('Đã hủy đơn dịch vụ thành công.');
+      notifySuccess('Đã hủy đơn dịch vụ', `Đơn ${order.order_code} đã được cập nhật.`);
       fetchBookings();
     } catch (error) {
-      alert(error.message || 'Không thể hủy đơn dịch vụ.');
+      notifyError('Không thể hủy đơn dịch vụ', error.message || 'Vui lòng thử lại sau.');
     }
   };
 

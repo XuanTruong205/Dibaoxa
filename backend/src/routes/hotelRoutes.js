@@ -28,8 +28,12 @@ const roomQuery = z.object({
 }).strict().refine((value) => (value.check_in && value.check_out) || (!value.check_in && !value.check_out), {
   message: 'Phải truyền đồng thời check_in và check_out',
 });
+const featuredReviewQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(30).default(9),
+}).strict();
 
 router.get('/', validateQuery(searchQuery), hotelController.getHotels);
+router.get('/featured-reviews', validateQuery(featuredReviewQuery), hotelController.getFeaturedReviews);
 router.get('/:id', validateParams(hotelIdParams), hotelController.getHotelById);
 router.get('/:id/rooms', validateParams(hotelIdParams), validateQuery(roomQuery), hotelController.getHotelRooms);
 

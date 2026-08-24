@@ -15,12 +15,15 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import CreateHotelModal from '../modals/CreateHotelModal';
 import EditHotelModal from '../modals/EditHotelModal';
 import QuickRoomModal from '../modals/QuickRoomModal';
 
 export default function AdminHotelsView() {
   const { hotels, reports, deleteHotel, deleteReview } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingHotel, setEditingHotel] = useState(null);
   const [expandedReviews, setExpandedReviews] = useState(null);
@@ -40,8 +43,9 @@ export default function AdminHotelsView() {
     if (window.confirm(`Bạn có chắc chắn muốn xóa khách sạn "${name}" khỏi hệ thống?`)) {
       try {
         await deleteHotel(hotelId);
+        notifySuccess('Đã xóa khách sạn', `${name} đã được gỡ khỏi hệ thống.`);
       } catch (error) {
-        alert(error.message || 'Không thể xóa khách sạn.');
+        notifyError('Không thể xóa khách sạn', error.message || 'Vui lòng thử lại.');
       }
     }
   };
@@ -262,7 +266,7 @@ export default function AdminHotelsView() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={(created) => {
-          alert(`Đã thêm khách sạn [${created.name}] tại ${created.city || created.destination}.`);
+          notifySuccess('Đã thêm khách sạn', `${created.name} tại ${created.city || created.destination} đã được tạo.`);
         }}
       />
 
@@ -273,7 +277,7 @@ export default function AdminHotelsView() {
           hotelToEdit={editingHotel}
           onClose={() => setEditingHotel(null)}
           onSuccess={() => {
-            alert(`Đã cập nhật khách sạn [${editingHotel.name}].`);
+            notifySuccess('Đã cập nhật khách sạn', `${editingHotel.name} đã được lưu thay đổi.`);
             setEditingHotel(null);
           }}
         />

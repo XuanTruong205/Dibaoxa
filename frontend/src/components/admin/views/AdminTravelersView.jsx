@@ -16,9 +16,12 @@ import {
 import React, { useState } from 'react';
 import CreateTravelerModal from '../modals/CreateTravelerModal';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 
 export default function AdminTravelersView() {
   const { customers: travelers, addCustomer, updateCustomer, deleteCustomer } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTraveler, setEditingTraveler] = useState(null);
 
@@ -33,10 +36,10 @@ export default function AdminTravelersView() {
       };
       if (editingTraveler) await updateCustomer(editingTraveler.id, payload);
       else await addCustomer(payload);
-      alert(editingTraveler ? `Đã cập nhật hồ sơ [${newTraveler.fullName}]!` : `Đã đăng ký thành công hồ sơ du khách [${newTraveler.fullName}]!`);
+      notifySuccess(editingTraveler ? 'Đã cập nhật khách hàng' : 'Đã thêm khách hàng', `${newTraveler.fullName} đã được lưu vào hệ thống.`);
       setEditingTraveler(null);
     } catch (error) {
-      alert(error.message || 'Không thể thêm khách hàng.');
+      notifyError('Không thể lưu khách hàng', error.message || 'Vui lòng kiểm tra dữ liệu và thử lại.');
       throw error;
     }
   };
@@ -45,8 +48,9 @@ export default function AdminTravelersView() {
     if (!window.confirm(`Xóa tài khoản ${traveler.full_name || traveler.email}?`)) return;
     try {
       await deleteCustomer(traveler.id);
+      notifySuccess('Đã xóa tài khoản', `${traveler.full_name || traveler.email} đã được gỡ khỏi hệ thống.`);
     } catch (error) {
-      alert(error.message || 'Không thể xóa tài khoản đã có lịch sử giao dịch.');
+      notifyError('Không thể xóa tài khoản', error.message || 'Tài khoản có thể đã có lịch sử giao dịch.');
     }
   };
 

@@ -1,6 +1,7 @@
 import { Anchor, Copy, Edit, Image, MapPin, Plus, Ship, Sparkles, Star, Trash2, Wallet } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import CruiseEditorModal from '../modals/CruiseEditorModal';
 
 const CRUISE_PRESETS = {
@@ -30,6 +31,8 @@ const duplicatePreset = (cruise) => ({
 
 export default function AdminCruisesView() {
   const { cruises, cruiseDepartures, deleteCruise } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [editor, setEditor] = useState(null);
   const [creating, setCreating] = useState(false);
   const [creationPreset, setCreationPreset] = useState(null);
@@ -39,7 +42,12 @@ export default function AdminCruisesView() {
 
   const handleDelete = async (cruise) => {
     if (!window.confirm(`Xóa du thuyền "${cruise.name}"?`)) return;
-    try { await deleteCruise(cruise.id); } catch (error) { alert(error.message || 'Không thể xóa du thuyền.'); }
+    try {
+      await deleteCruise(cruise.id);
+      notifySuccess('Đã xóa du thuyền', `${cruise.name} đã được gỡ khỏi hệ thống.`);
+    } catch (error) {
+      notifyError('Không thể xóa du thuyền', error.message || 'Vui lòng thử lại.');
+    }
   };
 
   return (
@@ -62,7 +70,7 @@ export default function AdminCruisesView() {
         {!cruises.length && <div className="py-16 text-center"><Ship className="mx-auto h-10 w-10 text-slate-300" /><h2 className="mt-3 text-base font-bold text-slate-800">Chưa có du thuyền</h2><p className="text-sm text-slate-500">Thêm du thuyền đầu tiên để hiển thị ở trang người dùng.</p></div>}
       </section>
 
-      {(creating || editor) && <CruiseEditorModal cruise={editor} preset={creationPreset} onClose={() => { setCreating(false); setCreationPreset(null); setEditor(null); }} />}
+      {(creating || editor) && <CruiseEditorModal cruise={editor} preset={creationPreset} onSuccess={(saved) => notifySuccess(editor ? 'Đã cập nhật du thuyền' : 'Đã thêm du thuyền', `${saved?.name || 'Thông tin du thuyền'} đã được lưu.`)} onClose={() => { setCreating(false); setCreationPreset(null); setEditor(null); }} />}
     </div>
   );
 }

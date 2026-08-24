@@ -19,10 +19,12 @@ import {
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import AmenityPicker from './AmenityPicker';
 
 export default function CreateHotelModal({ isOpen, onClose, onSuccess }) {
   const { addHotel } = useAdminStore();
+  const notifyError = useNotificationStore((state) => state.error);
 
   // 1. General Info & Cover
   const [name, setName] = useState('');
@@ -156,7 +158,7 @@ export default function CreateHotelModal({ isOpen, onClose, onSuccess }) {
 
   const handleRemoveRoom = (roomIndex) => {
     if (rooms.length === 1) {
-      alert('Khách sạn phải có ít nhất 1 loại phòng!');
+      notifyError('Thiếu loại phòng', 'Khách sạn phải có ít nhất một loại phòng.');
       return;
     }
     setRooms(rooms.filter((_, i) => i !== roomIndex));
@@ -232,7 +234,7 @@ export default function CreateHotelModal({ isOpen, onClose, onSuccess }) {
       if (onSuccess) onSuccess(created);
       onClose();
     } catch (error) {
-      alert(error.message || 'Không thể thêm khách sạn.');
+      notifyError('Không thể thêm khách sạn', error.message || 'Vui lòng kiểm tra dữ liệu và thử lại.');
     }
   };
 

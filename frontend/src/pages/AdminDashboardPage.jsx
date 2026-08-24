@@ -11,10 +11,11 @@ import AdminPaymentsView from '../components/admin/views/AdminPaymentsView';
 import AdminReportsView from '../components/admin/views/AdminReportsView';
 import AdminTravelersView from '../components/admin/views/AdminTravelersView';
 import AdminTravelOrdersView from '../components/admin/views/AdminTravelOrdersView';
+import AdminContactInquiriesView from '../components/admin/views/AdminContactInquiriesView';
 import { useAuthStore } from '../store/useAuthStore';
 import { useAdminStore } from '../store/useAdminStore';
 
-export default function AdminDashboardPage({ onExitAdmin }) {
+export default function AdminDashboardPage({ onExitAdmin, onAuthSuccess }) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const { user, isAuthenticated } = useAuthStore();
   const { fetchAdminData } = useAdminStore();
@@ -30,6 +31,8 @@ export default function AdminDashboardPage({ onExitAdmin }) {
         onLoginSuccess={(targetRole) => {
           if (targetRole === 'user') {
             if (onExitAdmin) onExitAdmin();
+          } else {
+            onAuthSuccess?.();
           }
         }}
       />
@@ -52,6 +55,7 @@ export default function AdminDashboardPage({ onExitAdmin }) {
       {activeNav === 'cruises' && <AdminCruisesView />}
       {activeNav === 'payments' && <AdminPaymentsView />}
       {activeNav === 'reports' && <AdminReportsView />}
+      {activeNav === 'contacts' && <AdminContactInquiriesView />}
     </AdminLayout>
   );
 }

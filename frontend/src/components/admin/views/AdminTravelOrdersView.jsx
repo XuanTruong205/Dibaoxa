@@ -1,6 +1,7 @@
 import { CheckCircle2, Clock3, Eye, Filter, Inbox, Plane, Search, Ship, X, XCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useAdminStore } from '../../../store/useAdminStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`;
 const statusLabel = {
@@ -18,6 +19,8 @@ const statusClass = {
 
 export default function AdminTravelOrdersView() {
   const { travelOrders, confirmTravelOrder, cancelTravelOrder, loading, error } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [type, setType] = useState('all');
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
@@ -45,8 +48,10 @@ export default function AdminTravelOrdersView() {
     try {
       const updated = await confirmTravelOrder(order.id);
       if (selected?.id === order.id) setSelected(updated);
+      notifySuccess('Đã xác nhận thanh toán', `Đơn ${order.order_code} đã chuyển sang trạng thái xác nhận.`);
     } catch (actionFailure) {
       setActionError(actionFailure.message || 'Không thể xác nhận đơn.');
+      notifyError('Không thể xác nhận đơn', actionFailure.message || 'Vui lòng thử lại.');
     } finally {
       setActionId('');
     }
@@ -59,8 +64,10 @@ export default function AdminTravelOrdersView() {
     try {
       const updated = await cancelTravelOrder(order.id);
       if (selected?.id === order.id) setSelected(updated);
+      notifySuccess('Đã hủy đơn dịch vụ', `Đơn ${order.order_code} đã được cập nhật.`);
     } catch (actionFailure) {
       setActionError(actionFailure.message || 'Không thể hủy đơn.');
+      notifyError('Không thể hủy đơn', actionFailure.message || 'Vui lòng thử lại.');
     } finally {
       setActionId('');
     }

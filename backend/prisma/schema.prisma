@@ -10,19 +10,19 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password_hash String
-  full_name     String
-  phone         String?
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password_hash  String
+  full_name      String
+  phone          String?
   assigned_hotel String?
-  reward_points Int      @default(0)
-  vip_tier      String   @default("silver") // silver, gold, platinum
-  role          String   @default("customer") // customer, receptionist, admin
-  created_at    DateTime @default(now())
+  reward_points  Int      @default(0)
+  vip_tier       String   @default("silver") // silver, gold, platinum
+  role           String   @default("customer") // customer, receptionist, admin
+  created_at     DateTime @default(now())
 
-  bookings Booking[]
-  reviews  Review[]
+  bookings      Booking[]
+  reviews       Review[]
   travel_orders TravelOrder[]
 
   @@index([role])
@@ -61,7 +61,7 @@ model Room {
   id              String  @id @default(uuid())
   hotel_id        String
   name            String
-  room_type       String  // Single, Double, Suite, Deluxe
+  room_type       String // Single, Double, Suite, Deluxe
   price_per_night Int
   max_occupancy   Int     @default(2)
   bed_type        String
@@ -87,8 +87,8 @@ model Booking {
   guest_name         String?
   guest_phone        String?
   hold_id            String?   @unique
-  check_in_date      String    // YYYY-MM-DD
-  check_out_date     String    // YYYY-MM-DD
+  check_in_date      String // YYYY-MM-DD
+  check_out_date     String // YYYY-MM-DD
   total_guests       Int       @default(1)
   room_quantity      Int       @default(1)
   total_price        Int
@@ -164,28 +164,28 @@ model Review {
 }
 
 model Cruise {
-  id              String   @id
-  name            String
-  operator        String
-  destination     String
-  departure_port  String
-  duration_days   Int
-  price           Int
-  rating          Float    @default(9)
-  review_count    Int      @default(0)
-  ship_class      Int      @default(5)
-  image           String
-  gallery_images  String   @default("[]")
-  features        String   @default("[]")
-  cabins          String   @default("[]")
-  itinerary       String   @default("[]")
-  description     String
-  policies        String   @default("[]")
-  faqs            String   @default("[]")
-  specifications  String   @default("{}")
-  status          String   @default("active")
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id             String   @id
+  name           String
+  operator       String
+  destination    String
+  departure_port String
+  duration_days  Int
+  price          Int
+  rating         Float    @default(9)
+  review_count   Int      @default(0)
+  ship_class     Int      @default(5)
+  image          String
+  gallery_images String   @default("[]")
+  features       String   @default("[]")
+  cabins         String   @default("[]")
+  itinerary      String   @default("[]")
+  description    String
+  policies       String   @default("[]")
+  faqs           String   @default("[]")
+  specifications String   @default("{}")
+  status         String   @default("active")
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   departures CruiseDeparture[]
 
@@ -212,14 +212,14 @@ model CruiseDeparture {
 }
 
 model Payment {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   booking_id      String
   amount          Int
-  payment_method  String   // VNPAY, VietQR, Momo, CreditCard
-  status          String   @default("pending")
-  transaction_ref String   @unique
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  payment_method  String // VNPAY, VietQR, Momo, CreditCard
+  status          String    @default("pending")
+  transaction_ref String    @unique
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
   refunded_at     DateTime?
 
   booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
@@ -262,14 +262,14 @@ model TravelOrder {
 }
 
 model TravelOrderPayment {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   order_id        String
   amount          Int
   payment_method  String
-  status          String   @default("pending")
-  transaction_ref String   @unique
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  status          String    @default("pending")
+  transaction_ref String    @unique
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
   refunded_at     DateTime?
 
   order TravelOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
@@ -310,16 +310,38 @@ model TravelPackage {
 }
 
 model StaffDirectory {
-  id               String   @id @default(uuid())
-  full_name        String
-  email            String?  @unique
-  job_title        String
-  phone            String
-  assigned_hotel   String
-  status           String   @default("active")
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  full_name      String
+  email          String?  @unique
+  job_title      String
+  phone          String
+  assigned_hotel String
+  photo_url      String?
+  bio            String?
+  is_public      Boolean  @default(false)
+  display_order  Int      @default(0)
+  status         String   @default("active")
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   @@index([assigned_hotel, status])
+  @@index([is_public, status, display_order])
   @@map("staff_directory")
+}
+
+model ContactInquiry {
+  id          String    @id @default(uuid())
+  name        String
+  email       String
+  phone       String
+  service     String
+  message     String
+  status      String    @default("new")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  resolved_at DateTime?
+
+  @@index([status, created_at])
+  @@index([email, created_at])
+  @@map("contact_inquiries")
 }

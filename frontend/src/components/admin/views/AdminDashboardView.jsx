@@ -10,12 +10,14 @@ import {
 import React, { useState } from 'react';
 import { useAdminStore } from '../../../store/useAdminStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import { buildMonthlyOrderCounts, buildServiceBreakdown } from '../../../utils/adminPresentation';
 import CreateBookingModal from '../modals/CreateBookingModal';
 
 export default function AdminDashboardView({ onNavigate }) {
   const { user } = useAuthStore();
   const { bookings, travelOrders, payments, customers } = useAdminStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartYear, setChartYear] = useState(() => new Date().getFullYear());
 
@@ -302,7 +304,7 @@ export default function AdminDashboardView({ onNavigate }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={(created) => {
-          alert(`Đã khởi tạo đơn [${created.booking_code}] cho ${created.traveler_name}.`);
+          notifySuccess('Đã tạo đơn đặt phòng', `Đơn ${created.booking_code} cho ${created.traveler_name} đã được khởi tạo.`);
         }}
       />
 

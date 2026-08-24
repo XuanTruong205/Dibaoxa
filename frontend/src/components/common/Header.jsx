@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
+import { pathForTab } from '../../utils/siteRoutes';
 
 const MAIN_LINKS = [
   { tab: 'cruises', label: 'Du thuyền', Icon: Ship },
@@ -31,6 +33,7 @@ const MAIN_LINKS = [
 
 export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, onPrefetch }) {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const accountMenuRef = useRef(null);
@@ -64,6 +67,11 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, 
     setDropdownOpen(false);
   };
 
+  const handleInternalLink = (event, tab) => {
+    event.preventDefault();
+    navigate(tab);
+  };
+
   const isActive = (tab) => {
     if (tab === 'cruises') return activeTab === 'cruises' || activeTab === 'cruise-detail';
     if (tab === 'hotels') return activeTab === 'hotels' || activeTab === 'hotel-detail' || activeTab === 'booking';
@@ -79,24 +87,24 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, 
   return (
     <header className="app-header">
       <div className="app-header__inner">
-        <button type="button" onClick={() => navigate('home')} className="brand-lockup" aria-label="Về trang chủ Dibaoxa">
+        <a href={pathForTab('home')} onClick={(event) => handleInternalLink(event, 'home')} className="brand-lockup" aria-label="Về trang chủ Dibaoxa">
           <span className="brand-mark" aria-hidden="true"><img src="/logo.png" alt="Dibaoxa Logo" className="brand-mark__img" /></span>
           <span className="brand-copy"><strong>Dibaoxa</strong><small>Travel &amp; Staycation</small></span>
-        </button>
+        </a>
 
         <nav className="desktop-nav" aria-label="Điều hướng chính">
           {MAIN_LINKS.map(({ tab, label, Icon }) => (
-            <button
-              type="button"
+            <a
               key={tab}
-              onClick={() => navigate(tab)}
+              href={pathForTab(tab)}
+              onClick={(event) => handleInternalLink(event, tab)}
               onPointerEnter={() => onPrefetch?.(tab)}
               onFocus={() => onPrefetch?.(tab)}
               className={`nav-link ${isActive(tab) ? 'is-active' : ''}`}
               aria-current={isActive(tab) ? 'page' : undefined}
             >
               <Icon />{label}
-            </button>
+            </a>
           ))}
         </nav>
 
@@ -104,7 +112,7 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, 
           <a className="header-hotline" href="tel:19008899" aria-label="Gọi hotline 1900 8899">
             <Phone /><span><small>Hotline tư vấn</small><strong>1900 8899</strong></span>
           </a>
-          <button type="button" className="btn-primary btn-compact header-contact" onClick={() => navigate('contact')}>Liên hệ</button>
+          <a href={pathForTab('contact')} className="btn-primary btn-compact header-contact" onClick={(event) => handleInternalLink(event, 'contact')}>Liên hệ</a>
           <button
             type="button"
             onClick={onToggleTheme}
@@ -128,7 +136,7 @@ export default function Header({ activeTab, setActiveTab, theme, onToggleTheme, 
                     <button type="button" onClick={() => navigate('packages')} role="menuitem"><Sparkles />Gói ưu đãi</button>
                     <button type="button" onClick={() => navigate('profile')} role="menuitem"><CircleUserRound />Hồ sơ và điểm thưởng</button>
                     {(user.role === 'admin' || user.role === 'receptionist') && <button type="button" onClick={() => navigate('admin')} role="menuitem"><ShieldCheck />Quản trị và QR Scan</button>}
-                    <button type="button" onClick={() => { logout(); setDropdownOpen(false); }} className="account-dropdown__danger" role="menuitem"><LogOut />Đăng xuất</button>
+                    <button type="button" onClick={() => { logout(); setDropdownOpen(false); notifySuccess('Đã đăng xuất', 'Phiên làm việc của bạn đã kết thúc an toàn.'); navigate('home'); }} className="account-dropdown__danger" role="menuitem"><LogOut />Đăng xuất</button>
                   </div>
                 )}
             </div>

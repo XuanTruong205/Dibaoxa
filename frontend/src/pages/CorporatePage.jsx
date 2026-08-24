@@ -1,6 +1,8 @@
 import { ArrowRight, Building2, CalendarDays, Check, Mail, Phone, Ship, UsersRound } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import React, { useState } from 'react';
+import api from '../services/api';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const BENEFITS = [
   { title: 'Lịch trình theo mục tiêu', text: 'Điều chỉnh hoạt động cho nghỉ dưỡng, hội thảo hoặc tri ân nhân viên.', Icon: CalendarDays },
@@ -13,15 +15,34 @@ export default function CorporatePage() {
   const [form, setForm] = useState({ company: '', name: '', phone: '', email: '', groupSize: '20-40', note: '' });
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
     if (!form.company.trim() || !form.name.trim() || !/^\S+@\S+\.\S+$/.test(form.email) || form.phone.trim().length < 9) {
       setError('Vui lòng điền tên doanh nghiệp, người liên hệ, email và số điện thoại hợp lệ.');
       return;
     }
     setError('');
-    setSent(true);
+    setSubmitting(true);
+    try {
+      await api.post('/contact-inquiries', {
+        name: `${form.name} (${form.company})`,
+        email: form.email,
+        phone: form.phone,
+        service: 'corporate',
+        message: `Quy mô đoàn: ${form.groupSize}. ${form.note || 'Cần tư vấn hành trình doanh nghiệp.'}`,
+      });
+      setSent(true);
+      notifySuccess('Đã gửi yêu cầu doanh nghiệp', 'Đội ngũ Dibaoxa đã tiếp nhận thông tin của bạn.');
+    } catch (requestError) {
+      setError(requestError.message || 'Chưa thể gửi yêu cầu. Vui lòng thử lại.');
+      notifyError('Không thể gửi yêu cầu', requestError.message || 'Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -51,11 +72,10 @@ export default function CorporatePage() {
             <label><span>Quy mô đoàn</span><select value={form.groupSize} onChange={(event) => update('groupSize', event.target.value)}><option>Dưới 20 khách</option><option>20-40</option><option>41-80</option><option>Trên 80 khách</option></select></label>
             <label className="is-full"><span>Nhu cầu chính</span><textarea value={form.note} onChange={(event) => update('note', event.target.value)} placeholder="Ví dụ: hội thảo 2 ngày 1 đêm, cần không gian họp" /></label>
             {error && <p className="form-error is-full" role="alert">{error}</p>}
-            <button type="submit" className="btn-primary is-full">Gửi yêu cầu <ArrowRight /></button>
+            <button type="submit" className="btn-primary is-full" disabled={submitting}>{submitting ? 'Đang gửi...' : 'Gửi yêu cầu'} <ArrowRight /></button>
           </form>
         )}
       </section>
     </div>
   );
 }
-

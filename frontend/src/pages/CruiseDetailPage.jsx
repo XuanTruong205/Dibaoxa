@@ -14,7 +14,6 @@ import {
   Minus,
   Plus,
   Ship,
-  Star,
   UsersRound,
   Utensils,
   Waves,
@@ -27,13 +26,7 @@ import api from '../services/api';
 
 const HIGHLIGHT_ICONS = [BedDouble, Utensils, Coffee, Dumbbell, Bath, Waves];
 
-const REVIEW_SAMPLES = [
-  ['Mai Phương', 'Cabin sạch, lịch trình vừa phải và đội ngũ tư vấn giải thích rất rõ trước chuyến đi.'],
-  ['Quang Chính', 'Đồ ăn ngon, nhân viên chu đáo. Gia đình tôi đặc biệt thích hoạt động chèo kayak.'],
-  ['Minh Tuấn', 'Không gian đẹp và yên tĩnh. Phòng có ban công nên ngắm bình minh rất thoải mái.'],
-];
-
-export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogin }) {
+export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogin, onSeoChange }) {
   const reduceMotion = useReducedMotion();
   const [cruise, setCruise] = useState(null);
   const [departures, setDepartures] = useState([]);
@@ -81,7 +74,12 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
     if (!cruise) return;
     setMainImage(cruise.image);
     setRoomQuantities({});
-  }, [cruise]);
+    onSeoChange?.({
+      name: cruise.name,
+      description: cruise.description || `Xem cabin, lịch khởi hành và hành trình của ${cruise.name} tại ${cruise.destination}.`,
+      image: cruise.image,
+    });
+  }, [cruise, onSeoChange]);
 
   useEffect(() => {
     if (!galleryOpen) return undefined;
@@ -157,7 +155,7 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
         <div>
           <div className="product-detail__eyebrow"><Ship /> Du thuyền nghỉ dưỡng</div>
           <h1>{cruise.name}</h1>
-          <p><Star /> {cruise.rating} xuất sắc · {cruise.reviews} đánh giá · <MapPin /> {cruise.departurePort}</p>
+          <p><MapPin /> {cruise.departurePort} · Vận hành bởi {cruise.operator}</p>
         </div>
         <div className="product-detail__headline-price">
           <span>Giá từ</span>
@@ -306,11 +304,8 @@ export default function CruiseDetailPage({ cruiseId, onBack, onViewPlans, onLogi
         </section>
 
         <section id="reviews" className="product-section">
-          <div className="product-section__heading"><div><h2>Đánh giá ({cruise.reviews})</h2><p>Chia sẻ từ khách đã trải nghiệm hành trình.</p></div></div>
-          <div className="product-review-summary"><strong>{cruise.rating}</strong><div><span>Tuyệt hảo</span><small>{cruise.reviews} đánh giá đã xác thực</small></div><div className="product-review-summary__bars"><span><i style={{ width: '96%' }} /></span><span><i style={{ width: '91%' }} /></span><span><i style={{ width: '94%' }} /></span></div></div>
-          <div className="product-review-list">
-            {REVIEW_SAMPLES.map(([name, comment], index) => <article key={name}><div><span>{name.charAt(0)}</span><div><strong>{name}</strong><small>Khởi hành tháng {index + 5}/2026</small></div><b><Star /> 5.0</b></div><p>{comment}</p></article>)}
-          </div>
+          <div className="product-section__heading"><div><h2>Đánh giá đã xác thực</h2><p>Chỉ hiển thị nội dung có liên kết với đơn hàng đã hoàn thành.</p></div></div>
+          <div className="story-empty"><h2>Chưa có đánh giá đã xác thực</h2><p>Dibaoxa không hiển thị tên hoặc nhận xét mẫu. Đánh giá sẽ xuất hiện khi có khách hoàn thành hành trình và gửi phản hồi.</p></div>
         </section>
       </div>
 

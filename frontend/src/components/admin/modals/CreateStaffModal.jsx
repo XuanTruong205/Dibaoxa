@@ -1,4 +1,4 @@
-import { CheckCircle2, Shield, UserCheck, UserPlus, X } from 'lucide-react';
+import { CheckCircle2, Image, UserCheck, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 function normalizeStaffRole(value) {
@@ -16,6 +16,10 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess, initialDa
   const [assignedHotel, setAssignedHotel] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('active');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [bio, setBio] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState(0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -25,6 +29,10 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess, initialDa
     setAssignedHotel(initialData?.assigned_hotel || initialData?.assignedHotel || '');
     setEmail(initialData?.email || '');
     setStatus(initialData?.status || 'active');
+    setPhotoUrl(initialData?.photo_url || '');
+    setBio(initialData?.bio || '');
+    setIsPublic(Boolean(initialData?.is_public));
+    setDisplayOrder(Number(initialData?.display_order || 0));
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -39,6 +47,10 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess, initialDa
       assignedHotel,
       email,
       status,
+      photoUrl,
+      bio,
+      isPublic,
+      displayOrder,
       joinedAt: new Date().toLocaleDateString('vi-VN'),
     };
 
@@ -130,6 +142,48 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess, initialDa
           </div>
 
           <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1" htmlFor="staff-photo-url">Ảnh chân dung công khai</label>
+            <div className="flex items-center gap-2">
+              <Image className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+              <input
+                id="staff-photo-url"
+                type="text"
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
+                placeholder="https://... hoặc /images/team/..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800"
+              />
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Chỉ dùng ảnh đã được nhân sự đồng ý công bố.</p>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1" htmlFor="staff-bio">Giới thiệu ngắn</label>
+            <textarea
+              id="staff-bio"
+              rows="3"
+              maxLength="500"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Vai trò, kinh nghiệm hoặc nhóm hành trình phụ trách"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800"
+            />
+          </div>
+
+          <div className="grid grid-cols-[1fr_110px] gap-3 items-end">
+            <label className="flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
+              <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+              Hiển thị trên website
+            </label>
+            <label className="text-xs font-bold text-slate-700">
+              Thứ tự
+              <input type="number" min="0" max="10000" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+            </label>
+          </div>
+
+          {isPublic && !photoUrl.trim() && <p className="text-xs font-semibold text-amber-700" role="alert">Cần thêm ảnh chân dung trước khi hồ sơ có thể xuất hiện trên website.</p>}
+
+          <div>
             <label className="text-xs font-bold text-slate-700 block mb-1">Trạng thái</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800">
               <option value="active">Đang hoạt động</option>
@@ -148,6 +202,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSuccess, initialDa
             </button>
             <button
               type="submit"
+              disabled={isPublic && !photoUrl.trim()}
               className="btn-primary py-2.5 px-6 text-xs font-semibold shadow-md flex items-center gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />

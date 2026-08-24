@@ -42,3 +42,12 @@ export async function getHotelRooms(req, res, next) {
     next(error);
   }
 }
+
+export async function getFeaturedReviews(req, res, next) {
+  try {
+    const reviews = await hotelService.listFeaturedReviews(req.query.limit);
+    res.status(200).json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    next(error);
+  }
+}

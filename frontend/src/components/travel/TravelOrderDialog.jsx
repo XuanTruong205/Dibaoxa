@@ -3,6 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
+import { copyTextToClipboard } from '../../utils/clipboard';
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`;
 
@@ -58,6 +60,8 @@ function buildOrderPayload(selection, traveler, requestId) {
 export default function TravelOrderDialog({ selection, onClose, onViewPlans, onLogin }) {
   const reduceMotion = useReducedMotion();
   const { isAuthenticated, user, refreshProfile } = useAuthStore();
+  const notifySuccess = useNotificationStore((state) => state.success);
+  const notifyError = useNotificationStore((state) => state.error);
   const [stage, setStage] = useState('details');
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', note: '' });
   const [errors, setErrors] = useState({});
@@ -156,7 +160,14 @@ export default function TravelOrderDialog({ selection, onClose, onViewPlans, onL
     }
   };
 
-  const copy = (value) => navigator.clipboard?.writeText(String(value || ''));
+  const copy = async (label, value) => {
+    try {
+      await copyTextToClipboard(value);
+      notifySuccess(`Đã sao chép ${label.toLocaleLowerCase('vi')}`, `${label} đã được lưu vào bộ nhớ tạm.`);
+    } catch (error) {
+      notifyError('Không thể sao chép', error.message || 'Vui lòng chọn và sao chép nội dung thủ công.');
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -204,7 +215,7 @@ export default function TravelOrderDialog({ selection, onClose, onViewPlans, onL
                 <img src={order.payment_qr.qr_image_url} alt="Mã VietQR thanh toán đơn dịch vụ" />
                 <div>
                   <strong>{order.payment_qr.bank_name} · {order.payment_qr.account_name}</strong>
-                  {[['Số tài khoản', order.payment_qr.account_number], ['Số tiền', money(order.payment_qr.amount)], ['Nội dung', order.payment_qr.transfer_content]].map(([label, value]) => <button key={label} type="button" onClick={() => copy(value)}><span>{label}</span><b>{value}</b><Copy /></button>)}
+                  {[['Số tài khoản', order.payment_qr.account_number], ['Số tiền', money(order.payment_qr.amount)], ['Nội dung chuyển khoản', order.payment_qr.transfer_content]].map(([label, value]) => <button key={label} type="button" onClick={() => copy(label, value)} aria-label={`Sao chép ${label.toLocaleLowerCase('vi')}`}><span>{label}</span><b>{value}</b><Copy /></button>)}
                   <p><LoaderCircle className="animate-spin" /> Đang chờ ngân hàng xác nhận tự động…</p>
                 </div>
               </div>}

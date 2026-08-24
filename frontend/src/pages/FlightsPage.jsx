@@ -32,12 +32,6 @@ import api from '../services/api';
 const TODAY = getDateFromToday(0);
 const DEFAULT_FILTERS = { maxPrice: 20000000, airline: 'all', period: 'all', refundable: false, baggage: false };
 const CABIN_CLASSES = { economy: 'ECONOMY', premium: 'PREMIUM_ECONOMY', business: 'BUSINESS' };
-const REVIEWS = [
-  { quote: 'Dibaoxa tư vấn chuyến hợp giờ, nhắc check-in và giải thích hành lý rất rõ. Gia đình mình ngồi gần nhau nên chuyến đi nhẹ nhàng hơn hẳn.', name: 'Chị Lê Thủy', trip: 'TP. Hồ Chí Minh đi Đà Nẵng' },
-  { quote: 'Mình đổi giờ bay sát ngày nhưng được hỗ trợ nhanh. Mọi khoản chênh lệch đều được báo trước khi xác nhận.', name: 'Anh Quang Anh', trip: 'Hà Nội đi Phú Quốc' },
-  { quote: 'Bộ lọc giờ bay và hành lý giúp mình chọn chuyến công tác trong vài phút, không phải mở nhiều tab để so sánh.', name: 'Bạn Chu Huyền', trip: 'Đà Nẵng đi TP. Hồ Chí Minh' },
-];
-
 function airportLabel(code, airports = AIRPORTS) {
   const airport = airports.find((item) => item.code === code);
   return airport ? `${airport.name} (${airport.code})` : code;
@@ -84,14 +78,16 @@ export default function FlightsPage({ onViewPlans, onLogin }) {
   const [loadError, setLoadError] = useState('');
   const [mobileFilters, setMobileFilters] = useState(false);
   const [selection, setSelection] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [reviewIndex, setReviewIndex] = useState(0);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([api.get('/flights/status'), api.get('/flights/airports')]).then(([statusResult, airportsResult]) => {
+    Promise.allSettled([api.get('/flights/status'), api.get('/flights/airports'), api.get('/hotels/featured-reviews', { params: { limit: 3 } })]).then(([statusResult, airportsResult, reviewsResult]) => {
       if (!active) return;
       if (statusResult.status === 'fulfilled') setProviderStatus(statusResult.value.data.data);
       if (airportsResult.status === 'fulfilled' && airportsResult.value.data.data?.length) setAirports(airportsResult.value.data.data);
+      if (reviewsResult.status === 'fulfilled' && Array.isArray(reviewsResult.value.data.data)) setReviews(reviewsResult.value.data.data);
     });
     return () => { active = false; };
   }, []);
@@ -153,7 +149,7 @@ export default function FlightsPage({ onViewPlans, onLogin }) {
     setSearch(nextSearch);
     setHasSearched(true);
     executeSearch(nextSearch);
-    window.setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }), 60);
+    window.requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
   };
 
   const swapAirports = () => setDraft((current) => ({ ...current, origin: current.destination, destination: current.origin }));
@@ -166,7 +162,7 @@ export default function FlightsPage({ onViewPlans, onLogin }) {
     item: flight,
     search,
   });
-  const review = REVIEWS[reviewIndex];
+  const review = reviews[reviewIndex];
 
   return (
     <div className="reference-flight-page">
@@ -231,10 +227,10 @@ export default function FlightsPage({ onViewPlans, onLogin }) {
         </div>
       </section>
 
-      <section className="reference-flight-review" aria-labelledby="flight-review-title">
+      {review && <section className="reference-flight-review" aria-labelledby="flight-review-title">
         <div className="reference-flight-review__image"><img src="/images/dibaoxa-discover-vietnam.webp" alt="Gia đình trải nghiệm chuyến đi tại Việt Nam" loading="lazy" /></div>
-        <motion.div key={reviewIndex} initial={reduceMotion ? false : { opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}><span>Đánh giá từ người đã trải nghiệm</span><h2 id="flight-review-title">Chuyến bay nhẹ nhàng bắt đầu từ lựa chọn rõ ràng.</h2><blockquote>“{review.quote}”</blockquote><strong>{review.name}</strong><small>{review.trip}</small><div>{REVIEWS.map((item, index) => <button type="button" key={item.name} className={index === reviewIndex ? 'is-active' : ''} onClick={() => setReviewIndex(index)} aria-label={`Xem đánh giá của ${item.name}`}><Star /></button>)}</div></motion.div>
-      </section>
+        <motion.div key={review.id} initial={reduceMotion ? false : { opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}><span>Đánh giá từ người đã trải nghiệm</span><h2 id="flight-review-title">Trải nghiệm thật từ khách hàng Dibaoxa.</h2><blockquote>“{review.comment}”</blockquote><strong>{review.user?.full_name || 'Khách hàng Dibaoxa'}</strong><small>{review.hotel?.name}{review.hotel?.city ? `, ${review.hotel.city}` : ''}</small><div>{reviews.map((item, index) => <button type="button" key={item.id} className={index === reviewIndex ? 'is-active' : ''} onClick={() => setReviewIndex(index)} aria-label={`Xem đánh giá ${index + 1}`}><Star /></button>)}</div></motion.div>
+      </section>}
 
       <section className="reference-airline-network" aria-labelledby="airline-network-title"><div><span>Hạ tầng tìm kiếm</span><h2 id="airline-network-title">Dữ liệu thật, phạm vi nội địa rõ ràng.</h2></div><div><article><Server /><strong>Google Flights qua SerpApi</strong><small>{providerStatus.configured ? `Đã kết nối · lưu tạm ${providerStatus.cacheMinutes || 10} phút để tiết kiệm quota` : 'Đang chờ cấu hình API key miễn phí'}</small></article><article><Plane /><strong>{airports.length} sân bay Việt Nam</strong><small>Tên sân bay, thành phố và mã IATA đầy đủ</small></article></div></section>
       <PlanDialog selection={selection} onClose={() => setSelection(null)} onViewPlans={onViewPlans} onLogin={onLogin} />
